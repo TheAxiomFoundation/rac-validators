@@ -9,16 +9,14 @@ TAXSIM API: https://taxsim.nber.org/taxsim35/
 
 import csv
 import io
+import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-import urllib.request
-import urllib.error
-import tempfile
-import subprocess
+from typing import Dict, List, Optional
 
 # Add parent for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -438,7 +436,7 @@ def query_taxsim(csv_data: str, max_retries: int = 3) -> List[TaxSimResult]:
             # TAXSIM returns space-separated or comma-separated values
             # First, try to detect the format
             lines = result_text.strip().split("\n")
-            if not lines:
+            if not lines:  # pragma: no cover – str.split() never returns []
                 print("Empty response from TAXSIM")
                 continue
 
@@ -774,7 +772,7 @@ def generate_dashboard(
         "",
         f"- **Total test cases:** {len(cases)}",
         f"- **Successful comparisons:** {sum(1 for c in comparisons if c.taxsim is not None)}",
-        f"- **Tax year:** 2023 (TAXSIM 35 max supported year)",
+        "- **Tax year:** 2023 (TAXSIM 35 max supported year)",
         "",
         "## Accuracy Metrics",
         "",
@@ -996,5 +994,5 @@ def main():
         print(f"  {var}: MAE=${s['mae']:,.0f}, correlation={s['correlation']:.3f}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

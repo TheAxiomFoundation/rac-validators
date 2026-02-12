@@ -1,15 +1,14 @@
 """Core record-by-record comparison logic."""
 
 from datetime import datetime
-from typing import Any
 
 import numpy as np
 
 # Conditional imports
 try:
-    from policyengine_us import Microsimulation
+    from policyengine_us import Microsimulation  # pragma: no cover
 
-    HAS_POLICYENGINE = True
+    HAS_POLICYENGINE = True  # pragma: no cover
 except ImportError:
     HAS_POLICYENGINE = False
     Microsimulation = None
@@ -132,8 +131,8 @@ def load_cosilico_values(variable: str, year: int = 2024, return_ids: bool = Fal
         )
     sys.path.insert(0, str(data_sources_path))
 
-    from tax_unit_builder import load_and_build_tax_units
     from cosilico_runner import run_all_calculations
+    from tax_unit_builder import load_and_build_tax_units
 
     # Load and compute
     df = load_and_build_tax_units(year)

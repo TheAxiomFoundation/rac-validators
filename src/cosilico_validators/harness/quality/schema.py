@@ -12,7 +12,6 @@ from pathlib import Path
 
 from .. import QualityIssue
 
-
 # Valid values for schema fields
 VALID_ENTITIES = {
     # Core tax/benefit units
@@ -150,7 +149,7 @@ def check_schema(rac_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]
                         val = float(literal)
                         if val in {-1.0, 0.0, 1.0, 2.0, 3.0}:
                             continue
-                    except ValueError:
+                    except ValueError:  # pragma: no cover – regex only matches numeric literals
                         pass
 
                     issues.append(

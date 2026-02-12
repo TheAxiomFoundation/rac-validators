@@ -45,3 +45,6 @@ Thumbs.db
 # Local config
 *.local.yaml
 *.local.json
+
+# Downloaded executables
+oracles/

@@ -84,3 +84,15 @@ markers = [
     "integration: marks tests as requiring network access (deselect with '-m \"not integration\"')",
     "slow: marks tests as slow-running (deselect with '-m \"not slow\"')",
 ]
+
+[tool.coverage.run]
+source = ["src/cosilico_validators"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+]
