@@ -699,5 +699,5 @@ def main(year: int, output: Optional[str]):
     print("\nNote: Variables show 0% until .rac→engine integration is complete")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

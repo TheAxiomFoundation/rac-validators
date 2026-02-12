@@ -708,5 +708,5 @@ def harness_scorecard(before, after, output):
         console.print(scorecard)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     cli()

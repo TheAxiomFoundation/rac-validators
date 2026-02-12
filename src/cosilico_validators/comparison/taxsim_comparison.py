@@ -438,7 +438,7 @@ def query_taxsim(csv_data: str, max_retries: int = 3) -> List[TaxSimResult]:
             # TAXSIM returns space-separated or comma-separated values
             # First, try to detect the format
             lines = result_text.strip().split("\n")
-            if not lines:
+            if not lines:  # pragma: no cover – str.split() never returns []
                 print("Empty response from TAXSIM")
                 continue
 
@@ -996,5 +996,5 @@ def main():
         print(f"  {var}: MAE=${s['mae']:,.0f}, correlation={s['correlation']:.3f}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

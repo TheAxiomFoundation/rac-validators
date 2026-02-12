@@ -382,7 +382,7 @@ def print_comparison(results: dict[str, RecordComparison]):
             print(f"    {model:15} ${diff:>10.0f}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Quick test with small sample
     results = compare_records(year=2024, sample_size=100)
     print_comparison(results)

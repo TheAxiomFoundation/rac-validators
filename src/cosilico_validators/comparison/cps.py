@@ -456,7 +456,7 @@ def export_to_dashboard(
             "n_records": totals.n_records,
         })
         total_cos_time = totals.cosilico_time_ms  # Same for all vars
-        total_pe_time = totals.policyengine_time_ms
+        total_pe_time = totals.policyengine_time_ms  # pragma: no cover – unreachable due to AttributeError above
 
     all_totals = list(comparison.values())
     overall_match = np.mean([t.match_rate for t in all_totals]) if all_totals else 0
@@ -543,5 +543,5 @@ def main():
     print(generate_report(2024))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

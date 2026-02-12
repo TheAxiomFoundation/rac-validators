@@ -61,12 +61,12 @@ class BaseValidator(ABC):
         Returns:
             ValidatorResult with calculated value or error
         """
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def supports_variable(self, variable: str) -> bool:
         """Check if this validator supports a given variable."""
-        pass
+        pass  # pragma: no cover
 
     def batch_validate(
         self, test_cases: list[TestCase], variable: str, year: int = 2024

@@ -363,5 +363,5 @@ def run_comparison_demo(year: int = 2023):
                 print(f"  {validator_name}: Failed")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     run_comparison_demo()

@@ -69,3 +69,42 @@ class TestValidatorType:
 
     def test_supplementary_type(self):
         assert ValidatorType.SUPPLEMENTARY.value == "supplementary"
+
+
+class TestBaseValidator:
+    def test_batch_validate_default(self):
+        from cosilico_validators.validators.base import BaseValidator
+
+        class ConcreteValidator(BaseValidator):
+            name = "Test"
+            validator_type = ValidatorType.REFERENCE
+            supported_variables = {"eitc"}
+
+            def validate(self, test_case, variable, year=2024):
+                return ValidatorResult(
+                    validator_name=self.name,
+                    validator_type=self.validator_type,
+                    calculated_value=100.0,
+                )
+
+            def supports_variable(self, variable):
+                return variable in self.supported_variables
+
+        v = ConcreteValidator()
+        cases = [
+            TestCase(name="t1", inputs={}, expected={}),
+            TestCase(name="t2", inputs={}, expected={}),
+        ]
+        results = v.batch_validate(cases, "eitc")
+        assert len(results) == 2
+        assert all(r.calculated_value == 100.0 for r in results)
+
+    def test_result_success_with_error_and_value(self):
+        """Test that result with both value and error is not success."""
+        result = ValidatorResult(
+            validator_name="Test",
+            validator_type=ValidatorType.REFERENCE,
+            calculated_value=500.0,
+            error="some warning",
+        )
+        assert not result.success

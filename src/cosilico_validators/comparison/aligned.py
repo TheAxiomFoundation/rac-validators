@@ -8,8 +8,8 @@ from typing import Callable
 import numpy as np
 
 try:
-    from policyengine_us import Microsimulation
-    HAS_POLICYENGINE = True
+    from policyengine_us import Microsimulation  # pragma: no cover
+    HAS_POLICYENGINE = True  # pragma: no cover
 except ImportError:
     HAS_POLICYENGINE = False
     Microsimulation = None

@@ -7,9 +7,9 @@ import numpy as np
 
 # Conditional imports
 try:
-    from policyengine_us import Microsimulation
+    from policyengine_us import Microsimulation  # pragma: no cover
 
-    HAS_POLICYENGINE = True
+    HAS_POLICYENGINE = True  # pragma: no cover
 except ImportError:
     HAS_POLICYENGINE = False
     Microsimulation = None

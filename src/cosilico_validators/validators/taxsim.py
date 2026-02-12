@@ -356,7 +356,7 @@ class TaxsimValidator(BaseValidator):
                     continue
                 raise RuntimeError(f"TAXSIM API failed: {e}") from e
 
-        raise RuntimeError("TAXSIM API failed after all retries")
+        raise RuntimeError("TAXSIM API failed after all retries")  # pragma: no cover – loop always returns/raises
 
     def _execute_local(self, input_file: str) -> str:
         """Execute TAXSIM locally and return output."""
@@ -376,7 +376,7 @@ class TaxsimValidator(BaseValidator):
 
             if system != "windows":
                 cmd = f'cat "{input_file}" | "{self.taxsim_path}" > "{output_file}"'
-            else:
+            else:  # pragma: no cover – Windows-only path
                 cmd = f'type "{input_file}" | "{self.taxsim_path}" > "{output_file}"'
 
             # Set up environment

@@ -188,3 +188,156 @@ class TestValidationResult:
         assert "EITC basic test" in summary
         assert "$600" in summary
         assert "Reward:" in summary
+
+    def test_matches_expected_none_consensus(self, simple_test_case):
+        """matches_expected returns False when consensus_value is None."""
+        validators = [
+            MockValidator("V1", ValidatorType.REFERENCE, None, error="Failed"),
+        ]
+        engine = ConsensusEngine(validators)
+        result = engine.validate(simple_test_case, "eitc", 2024)
+        assert not result.matches_expected
+
+    def test_summary_with_potential_bugs(self, simple_test_case):
+        """Summary includes bug count when potential_bugs exist."""
+        validators = [
+            MockValidator("V1", ValidatorType.REFERENCE, 800),
+            MockValidator("V2", ValidatorType.REFERENCE, 850),
+        ]
+        engine = ConsensusEngine(validators, tolerance=15.0)
+        result = engine.validate(simple_test_case, "eitc", 2024, claude_confidence=0.95)
+        summary = result.summary()
+        assert "Potential bugs:" in summary
+
+
+class TestConsensusRewardConfidenceEdgeCases:
+    def test_compute_reward_empty_results(self):
+        """Test _compute_reward with empty results dict returns 0.0."""
+        engine = ConsensusEngine(validators=[
+            MockValidator("V1", ValidatorType.REFERENCE, 500),
+        ])
+        reward = engine._compute_reward({}, expected=500.0, consensus_level=ConsensusLevel.DISAGREEMENT)
+        assert reward == 0.0
+
+    def test_compute_confidence_no_successful_results(self):
+        """Test _compute_confidence with consensus_value but no successful validators."""
+        engine = ConsensusEngine(validators=[
+            MockValidator("V1", ValidatorType.REFERENCE, 500),
+        ])
+        failed_result = ValidatorResult(
+            validator_name="test",
+            validator_type=ValidatorType.REFERENCE,
+            calculated_value=None,
+            error="Failed",
+        )
+        assert not failed_result.success
+        confidence = engine._compute_confidence({"test": failed_result}, consensus_value=500.0)
+        assert confidence == 0.0
+
+
+class TestConsensusEdgeCases:
+    def test_expected_from_first_value(self):
+        """When variable name doesn't match expected keys, use first value."""
+        tc = TestCase(
+            name="test",
+            inputs={"earned_income": 15000},
+            expected={"income_tax": 500},  # Key doesn't match "eitc"
+        )
+        validators = [MockValidator("V1", ValidatorType.REFERENCE, 500)]
+        engine = ConsensusEngine(validators)
+        result = engine.validate(tc, "eitc", 2024)
+        # Should use first expected value (500) since "eitc" not in expected
+        assert result.expected_value == 500
+
+    def test_expected_empty(self):
+        """When expected is empty, default to 0."""
+        tc = TestCase(
+            name="test",
+            inputs={"earned_income": 15000},
+            expected={},
+        )
+        validators = [MockValidator("V1", ValidatorType.REFERENCE, 0)]
+        engine = ConsensusEngine(validators)
+        result = engine.validate(tc, "eitc", 2024)
+        assert result.expected_value == 0
+
+    def test_majority_agreement(self):
+        """Test majority agreement path (not full, not primary confirmed)."""
+        tc = TestCase(
+            name="test",
+            inputs={"earned_income": 15000},
+            expected={"eitc": 600},
+        )
+        validators = [
+            MockValidator("V1", ValidatorType.REFERENCE, 700),
+            MockValidator("V2", ValidatorType.REFERENCE, 705),
+            MockValidator("V3", ValidatorType.REFERENCE, 1000),  # outlier
+        ]
+        engine = ConsensusEngine(validators, tolerance=15.0)
+        result = engine.validate(tc, "eitc", 2024)
+        # V1 and V2 agree (within 15), V3 is outlier
+        # None is PRIMARY, so skip PRIMARY_CONFIRMED
+        # Cluster of [700, 705] is majority (2/3)
+        assert result.consensus_level == ConsensusLevel.MAJORITY_AGREEMENT
+
+    def test_detect_potential_bugs_low_confidence(self):
+        """No bugs detected when claude_confidence is low."""
+        tc = TestCase(
+            name="test",
+            inputs={"earned_income": 15000},
+            expected={"eitc": 600},
+        )
+        validators = [MockValidator("V1", ValidatorType.REFERENCE, 1000)]
+        engine = ConsensusEngine(validators, tolerance=15.0)
+        result = engine.validate(tc, "eitc", 2024, claude_confidence=0.5)
+        assert len(result.potential_bugs) == 0
+
+    def test_detect_potential_bugs_with_failed_validator(self):
+        """Failed validators are skipped in bug detection."""
+        tc = TestCase(
+            name="test",
+            inputs={"earned_income": 15000},
+            expected={"eitc": 600},
+            citation="26 USC 32",
+        )
+        validators = [
+            MockValidator("V1", ValidatorType.REFERENCE, None, error="Failed"),
+            MockValidator("V2", ValidatorType.REFERENCE, 1000),
+        ]
+        engine = ConsensusEngine(validators, tolerance=15.0)
+        result = engine.validate(tc, "eitc", 2024, claude_confidence=0.95)
+        # Only V2 should produce a bug (V1 is failed)
+        assert len(result.potential_bugs) == 1
+        assert result.potential_bugs[0]["validator"] == "V2"
+
+    def test_reward_potential_upstream_bug(self):
+        """Reward for POTENTIAL_UPSTREAM_BUG level."""
+        tc = TestCase(
+            name="test",
+            inputs={"earned_income": 15000},
+            expected={"eitc": 600},
+        )
+        validators = [
+            MockValidator("V1", ValidatorType.REFERENCE, 800),
+            MockValidator("V2", ValidatorType.REFERENCE, 850),
+        ]
+        engine = ConsensusEngine(validators, tolerance=15.0)
+        result = engine.validate(tc, "eitc", 2024, claude_confidence=0.95)
+        assert result.consensus_level == ConsensusLevel.POTENTIAL_UPSTREAM_BUG
+        # Reward should be slightly positive for this level
+        assert result.reward_signal >= 0
+
+    def test_summary_no_consensus(self):
+        """Summary with N/A consensus."""
+        tc = TestCase(
+            name="test",
+            inputs={},
+            expected={"eitc": 0},
+        )
+        validators = [
+            MockValidator("V1", ValidatorType.REFERENCE, None, error="F"),
+        ]
+        engine = ConsensusEngine(validators)
+        result = engine.validate(tc, "eitc", 2024)
+        summary = result.summary()
+        assert "N/A" in summary
