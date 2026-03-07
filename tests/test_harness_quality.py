@@ -16,6 +16,11 @@ from cosilico_validators.harness.quality.imports import (
     IMPORTS_START,
     check_imports,
 )
+from cosilico_validators.harness.quality.grounding import (
+    check_grounding,
+    extract_numbers_from_text,
+    extract_numeric_values,
+)
 from cosilico_validators.harness.quality.schema import (
     ALLOWED_INTEGERS,
     DTYPE_PATTERN,
@@ -372,7 +377,7 @@ class TestSchemaPatterns:
         assert "Boolean" in VALID_DTYPES
 
     def test_allowed_integers(self):
-        assert {-1, 0, 1, 2, 3} == ALLOWED_INTEGERS
+        assert {-1, 0, 1} == ALLOWED_INTEGERS
 
 
 class TestCheckSchema:
@@ -461,13 +466,191 @@ class TestCheckSchema:
         issues, no_literals, all_valid = check_schema([rac_file])
         assert isinstance(issues, list)
 
-    def test_allowed_float_literals_continue(self, tmp_path):
-        """Test that allowed float literals like 2.0, 3.0 trigger the continue path."""
+    def test_disallowed_float_literals(self, tmp_path):
+        """Test that 2.0 and 3.0 are flagged as disallowed literals."""
         rac_file = tmp_path / "test.rac"
         rac_file.write_text(
             "variable eitc:\n  formula: |\n    x * 2.0 + 3.0\n"
         )
         issues, no_literals, all_valid = check_schema([rac_file])
-        # 2.0 and 3.0 are in ALLOWED_INTEGERS set as floats, so no literal issues
-        assert no_literals is True
-        assert not any(i.category == "literal" for i in issues)
+        # 2.0 and 3.0 are no longer allowed
+        assert no_literals is False
+        assert any(i.category == "literal" for i in issues)
+
+    def test_literal_2_in_formula_flagged(self, tmp_path):
+        """2 and 3 are no longer allowed in formulas."""
+        rac_file = tmp_path / "test.rac"
+        rac_file.write_text(
+            "variable x:\n  formula: |\n    income * 2\n"
+        )
+        issues, no_literals, all_valid = check_schema([rac_file])
+        assert no_literals is False
+
+
+# ============================================================================
+# quality/grounding.py
+# ============================================================================
+
+
+class TestExtractNumbersFromText:
+    def test_plain_numbers(self):
+        nums = extract_numbers_from_text("credit of $1,000 per child")
+        assert 1000 in nums
+
+    def test_dollar_amounts(self):
+        nums = extract_numbers_from_text("amount equal to $2,500")
+        assert 2500 in nums
+
+    def test_percentages(self):
+        nums = extract_numbers_from_text("rate of 7.65 percent")
+        assert 7.65 in nums
+
+    def test_plain_integers(self):
+        nums = extract_numbers_from_text("increased to 400 for 1998")
+        assert 400 in nums
+        assert 1998 in nums
+
+    def test_comma_separated(self):
+        nums = extract_numbers_from_text("threshold of 200,000")
+        assert 200000 in nums
+
+    def test_no_numbers(self):
+        nums = extract_numbers_from_text("no numeric values here")
+        assert len(nums) == 0
+
+
+class TestExtractNumericValues:
+    def test_param_value(self):
+        content = "ctc_amount:\n  from 2018-01-01: 2000\n  from 2025-01-01: 2200\n"
+        values = extract_numeric_values(content)
+        nums = [v[2] for v in values]
+        assert 2000 in nums
+        assert 2200 in nums
+
+    def test_skips_formulas(self):
+        content = "variable x:\n  formula: |\n    income * 12345\n"
+        values = extract_numeric_values(content)
+        nums = [v[2] for v in values]
+        assert 12345 not in nums
+
+    def test_skips_descriptions(self):
+        content = 'variable x:\n  description: "amount of $5000 per child"\n'
+        values = extract_numeric_values(content)
+        nums = [v[2] for v in values]
+        assert 5000 not in nums
+
+    def test_skips_docstrings(self):
+        content = '"""\nP.L. 107-16: increased to $600 for 2001\n"""\namt:\n  from 2001-01-01: 600\n'
+        values = extract_numeric_values(content)
+        nums = [v[2] for v in values]
+        assert 600 in nums
+        # The 600 in the docstring should NOT be extracted as a param value
+        assert len(values) == 1
+
+    def test_skips_allowed_values(self):
+        content = "flag:\n  from 2020-01-01: 0\ncount:\n  from 2020-01-01: 1\n"
+        values = extract_numeric_values(content)
+        assert len(values) == 0
+
+    def test_scalar_value(self):
+        content = "rate: 0.075\n"
+        values = extract_numeric_values(content)
+        nums = [v[2] for v in values]
+        assert 0.075 in nums
+
+    def test_skips_metadata_keys(self):
+        content = "entity: TaxUnit\nperiod: Year\n"
+        values = extract_numeric_values(content)
+        assert len(values) == 0
+
+    def test_skips_tests(self):
+        content = "variable x:\n  tests:\n    - inputs: {income: 50000}\n      output: 5000\n"
+        values = extract_numeric_values(content)
+        assert len(values) == 0
+
+
+class TestCheckGrounding:
+    def test_grounded_values_pass(self, tmp_path):
+        rac_file = tmp_path / "test.rac"
+        rac_file.write_text("ctc_amount:\n  from 2018-01-01: 1000\n")
+        rule_text = "an amount equal to $1,000"
+        issues, all_grounded = check_grounding([rac_file], rule_text=rule_text)
+        assert all_grounded is True
+        assert len(issues) == 0
+
+    def test_ungrounded_values_fail(self, tmp_path):
+        rac_file = tmp_path / "test.rac"
+        rac_file.write_text("ctc_amount:\n  from 2018-01-01: 2000\n")
+        rule_text = "an amount equal to $1,000"
+        issues, all_grounded = check_grounding([rac_file], rule_text=rule_text)
+        assert all_grounded is False
+        assert len(issues) == 1
+        assert issues[0].category == "grounding"
+        assert "2000" in issues[0].message
+
+    def test_no_rule_text_skips(self, tmp_path):
+        rac_file = tmp_path / "test.rac"
+        rac_file.write_text("ctc_amount:\n  from 2018-01-01: 9999\n")
+        issues, all_grounded = check_grounding([rac_file])
+        assert all_grounded is True
+        assert len(issues) == 0
+
+    def test_per_file_rule_text(self, tmp_path):
+        rac_file = tmp_path / "test.rac"
+        rac_file.write_text("rate:\n  from 2020-01-01: 0.3540\n")
+        issues, all_grounded = check_grounding(
+            [rac_file],
+            rule_text_by_file={str(rac_file): "credit percentage is 35.40 percent"},
+        )
+        # 0.3540 is not literally "35.40" — this tests exact matching
+        # The rule text has 35.40, the encoding has 0.3540
+        assert all_grounded is False
+
+    def test_unreadable_file_skipped(self, tmp_path):
+        bad_file = tmp_path / "nonexistent.rac"
+        issues, all_grounded = check_grounding(
+            [bad_file], rule_text="some text with 1000"
+        )
+        assert all_grounded is True
+
+    def test_multiple_values_mixed(self, tmp_path):
+        rac_file = tmp_path / "test.rac"
+        rac_file.write_text(
+            "amt:\n  from 2018-01-01: 1000\n  from 2025-01-01: 2200\n"
+        )
+        rule_text = "amount of $1,000"
+        issues, all_grounded = check_grounding([rac_file], rule_text=rule_text)
+        assert all_grounded is False
+        assert len(issues) == 1
+        assert "2200" in issues[0].message
+
+    def test_24a_encoding_fails_grounding(self, tmp_path):
+        """The actual 26 USC 24(a) encoding should fail — it has values from other subsections."""
+        rac_file = tmp_path / "a.rac"
+        rac_file.write_text(
+            "ctc_base_amount:\n"
+            "  from 1998-01-01: 400\n"
+            "  from 1999-01-01: 500\n"
+            "  from 2001-01-01: 600\n"
+            "  from 2003-01-01: 1000\n"
+            "  from 2018-01-01: 2000\n"
+            "  from 2025-01-01: 2200\n"
+        )
+        # The actual text of 24(a) only mentions $1,000
+        rule_text = (
+            "There shall be allowed as a credit against the tax imposed by "
+            "this chapter for the taxable year with respect to each qualifying "
+            "child of the taxpayer for which the taxpayer is allowed a deduction "
+            "under section 151 an amount equal to $1,000."
+        )
+        issues, all_grounded = check_grounding([rac_file], rule_text=rule_text)
+        assert all_grounded is False
+        # 400, 500, 600, 2000, 2200 are all ungrounded
+        ungrounded = {i.message.split("'")[1] for i in issues}
+        assert "400" in ungrounded
+        assert "500" in ungrounded
+        assert "600" in ungrounded
+        assert "2000" in ungrounded
+        assert "2200" in ungrounded
+        # 1000 IS in the text, so it should NOT be flagged
+        assert "1000" not in ungrounded

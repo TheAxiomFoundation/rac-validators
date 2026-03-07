@@ -79,14 +79,15 @@ class TestQualityResult:
 
     def test_overall_score_all_fail(self):
         qr = QualityResult(test_coverage=0.0, no_literals_pass=False,
-                          all_imports_valid=False, all_dtypes_valid=False)
+                          all_imports_valid=False, all_dtypes_valid=False,
+                          all_grounded=False)
         assert qr.overall_score == 0.0
 
     def test_overall_score_partial(self):
         qr = QualityResult(test_coverage=0.5, no_literals_pass=True,
                           all_imports_valid=False, all_dtypes_valid=True)
-        # 25 (literals) + 0 (imports) + 25 (dtypes) + 0.5*25 (coverage) = 62.5
-        assert qr.overall_score == pytest.approx(62.5)
+        # 20 (literals) + 0 (imports) + 20 (dtypes) + 20 (grounded default True) + 0.5*20 (coverage) = 70
+        assert qr.overall_score == pytest.approx(70.0)
 
 
 class TestHarnessResult:
