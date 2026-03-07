@@ -5,6 +5,7 @@ present in the source rule text. Encodings must be grounded in the
 source — no invented, hallucinated, or cross-referenced values.
 """
 
+import contextlib
 import re
 from pathlib import Path
 
@@ -23,9 +24,7 @@ PARAM_VALUE_PATTERN = re.compile(
 # Matches scalar variable definitions like:
 #   some_var: 1000
 #   rate: 0.075
-SCALAR_VALUE_PATTERN = re.compile(
-    r"^(\w[\w_]*):\s*(-?[\d,]+(?:\.\d+)?)\s*$"
-)
+SCALAR_VALUE_PATTERN = re.compile(r"^(\w[\w_]*):\s*(-?[\d,]+(?:\.\d+)?)\s*$")
 
 # Numbers that are always allowed (trivial values)
 ALLOWED_VALUES = {-1, 0, 1}
@@ -54,7 +53,6 @@ def extract_numeric_values(content: str) -> list[tuple[int, str, float]]:
     """
     values = []
     in_formula = False
-    in_description = False
     in_tests = False
     in_docstring = False
 
@@ -95,13 +93,9 @@ def extract_numeric_values(content: str) -> list[tuple[int, str, float]]:
             continue
 
         # Skip description strings
-        if re.match(r'\s*description:\s*"', line) or re.match(
-            r"\s*description:\s*'", line
-        ):
+        if re.match(r'\s*description:\s*"', line) or re.match(r"\s*description:\s*'", line):
             continue
-        if re.match(r'\s*label:\s*"', line) or re.match(
-            r"\s*label:\s*'", line
-        ):
+        if re.match(r'\s*label:\s*"', line) or re.match(r"\s*label:\s*'", line):
             continue
 
         # Check for parameter values (from DATE: VALUE)
@@ -147,16 +141,12 @@ def extract_numbers_from_text(text: str) -> set[float]:
 
     # Find all number-like patterns in the text
     # Matches: optional $, optional -, digits with optional commas, optional decimal
-    pattern = re.compile(
-        r"(?:^|(?<=[\s$(\[,]))(-?[\d,]+(?:\.\d+)?)\b"
-    )
+    pattern = re.compile(r"(?:^|(?<=[\s$(\[,]))(-?[\d,]+(?:\.\d+)?)\b")
 
     for m in pattern.finditer(text):
         raw = m.group(1).replace(",", "")
-        try:
+        with contextlib.suppress(ValueError):
             numbers.add(float(raw))
-        except ValueError:
-            pass
 
     return numbers
 
@@ -197,9 +187,7 @@ def check_grounding(
         file_key = str(rac_file)
         file_rule_numbers = rule_numbers.copy()
         if rule_text_by_file and file_key in rule_text_by_file:
-            file_rule_numbers |= extract_numbers_from_text(
-                rule_text_by_file[file_key]
-            )
+            file_rule_numbers |= extract_numbers_from_text(rule_text_by_file[file_key])
 
         if not file_rule_numbers:
             continue

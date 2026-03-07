@@ -232,8 +232,4 @@ class Delta:
 
     def has_regression(self, threshold: float = 0.01) -> bool:
         """Check if any metric regressed beyond threshold."""
-        return (
-            self.alignment_delta < -threshold
-            or self.coverage_delta < -threshold
-            or self.quality_delta < -threshold
-        )
+        return self.alignment_delta < -threshold or self.coverage_delta < -threshold or self.quality_delta < -threshold

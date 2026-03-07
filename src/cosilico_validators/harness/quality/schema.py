@@ -15,11 +15,18 @@ from .. import QualityIssue
 # Valid values for schema fields
 VALID_ENTITIES = {
     # Core tax/benefit units
-    "Person", "TaxUnit", "Household", "Family",
+    "Person",
+    "TaxUnit",
+    "Household",
+    "Family",
     # Benefit program units
-    "TanfUnit", "SnapUnit", "SPMUnit",
+    "TanfUnit",
+    "SnapUnit",
+    "SPMUnit",
     # Business/asset entities (for corporate/capital gains)
-    "Corporation", "Business", "Asset",
+    "Corporation",
+    "Business",
+    "Asset",
 }
 VALID_PERIODS = {"Year", "Month", "Week", "Day"}
 VALID_DTYPES = {"Money", "Rate", "Boolean", "Integer", "Count", "String", "Decimal"}

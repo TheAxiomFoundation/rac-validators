@@ -11,15 +11,15 @@ from cosilico_validators.harness.quality.coverage import (
     VARIABLE_PATTERN,
     check_test_coverage,
 )
-from cosilico_validators.harness.quality.imports import (
-    IMPORT_PATTERN,
-    IMPORTS_START,
-    check_imports,
-)
 from cosilico_validators.harness.quality.grounding import (
     check_grounding,
     extract_numbers_from_text,
     extract_numeric_values,
+)
+from cosilico_validators.harness.quality.imports import (
+    IMPORT_PATTERN,
+    IMPORTS_START,
+    check_imports,
 )
 from cosilico_validators.harness.quality.schema import (
     ALLOWED_INTEGERS,
@@ -37,6 +37,7 @@ from cosilico_validators.harness.quality.schema import (
 # ============================================================================
 # quality/__init__.py
 # ============================================================================
+
 
 class TestRunQualityChecks:
     def test_with_no_files(self, tmp_path):
@@ -69,8 +70,7 @@ class TestRunQualityChecks:
     def test_returns_issues(self, tmp_path):
         rac_file = tmp_path / "test.rac"
         rac_file.write_text(
-            "variable eitc:\n  entity: BadEntity\n  dtype: BadDtype\n"
-            "  formula: |\n    earned_income * 12345\n"
+            "variable eitc:\n  entity: BadEntity\n  dtype: BadDtype\n  formula: |\n    earned_income * 12345\n"
         )
         result = run_quality_checks(statute_root=tmp_path)
         assert isinstance(result.issues, list)
@@ -80,6 +80,7 @@ class TestRunQualityChecks:
 # ============================================================================
 # quality/coverage.py
 # ============================================================================
+
 
 class TestPatterns:
     def test_variable_pattern(self):
@@ -104,9 +105,7 @@ class TestPatterns:
 class TestCheckTestCoverage:
     def test_full_coverage(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable eitc:\n  formula: |\n    0\n  tests:\n    - name: test1\n"
-        )
+        rac_file.write_text("variable eitc:\n  formula: |\n    0\n  tests:\n    - name: test1\n")
         coverage, issues = check_test_coverage([rac_file])
         assert coverage == 1.0
         assert len(issues) == 0
@@ -121,8 +120,7 @@ class TestCheckTestCoverage:
     def test_partial_coverage(self, tmp_path):
         rac_file = tmp_path / "test.rac"
         rac_file.write_text(
-            "variable eitc:\n  formula: |\n    0\n  tests:\n    - name: t1\n"
-            "\nvariable ctc:\n  formula: |\n    0\n"
+            "variable eitc:\n  formula: |\n    0\n  tests:\n    - name: t1\n\nvariable ctc:\n  formula: |\n    0\n"
         )
         coverage, issues = check_test_coverage([rac_file])
         assert coverage == 0.5
@@ -161,9 +159,7 @@ class TestCheckTestCoverage:
 
     def test_tests_with_inputs_format(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable eitc:\n  formula: |\n    0\n  tests:\n    - inputs: {x: 1}\n"
-        )
+        rac_file.write_text("variable eitc:\n  formula: |\n    0\n  tests:\n    - inputs: {x: 1}\n")
         coverage, issues = check_test_coverage([rac_file])
         assert coverage == 1.0
 
@@ -171,6 +167,7 @@ class TestCheckTestCoverage:
 # ============================================================================
 # quality/imports.py
 # ============================================================================
+
 
 class TestImportPatterns:
     def test_imports_start(self):
@@ -205,9 +202,7 @@ class TestCheckImports:
         # Create importing file
         importer = tmp_path / "26" / "62" / "a.rac"
         importer.parent.mkdir(parents=True)
-        importer.write_text(
-            "imports:\n  - 26/32/a#eitc\n\nvariable agi:\n  formula: |\n    eitc\n"
-        )
+        importer.write_text("imports:\n  - 26/32/a#eitc\n\nvariable agi:\n  formula: |\n    eitc\n")
 
         issues, all_valid = check_imports([source, importer], tmp_path)
         assert isinstance(issues, list)
@@ -221,9 +216,7 @@ class TestCheckImports:
 
     def test_invalid_import_path(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "imports:\n  - nonexistent/path#var\n\nvariable x:\n  formula: |\n    0\n"
-        )
+        rac_file.write_text("imports:\n  - nonexistent/path#var\n\nvariable x:\n  formula: |\n    0\n")
         issues, all_valid = check_imports([rac_file], tmp_path)
         assert len(issues) >= 1
         assert all_valid is False
@@ -242,6 +235,7 @@ class TestCheckImports:
 
     def test_empty_file_list(self):
         from pathlib import Path
+
         issues, all_valid = check_imports([], Path("/tmp"))
         assert len(issues) == 0
         assert all_valid is True
@@ -269,8 +263,10 @@ class TestCheckImports:
         bad_file.write_text("valid content")
         # Make it unreadable by patching
         from unittest.mock import patch
+
         original_read = Path.read_text
         call_count = [0]
+
         def mock_read(self_path, *args, **kwargs):
             call_count[0] += 1
             if "bad.rac" in str(self_path) and call_count[0] <= 1:
@@ -289,8 +285,10 @@ class TestCheckImports:
 
         # Build index first (reads succeed), then fail on second pass
         from unittest.mock import patch
+
         original_read = Path.read_text
         read_calls = [0]
+
         def mock_read(self_path, *args, **kwargs):
             read_calls[0] += 1
             # Fail on the second read of this file (import checking pass)
@@ -321,6 +319,7 @@ class TestCheckImports:
     def test_file_outside_statute_root(self, tmp_path):
         """File not under statute_root uses stem as path_key."""
         import tempfile
+
         with tempfile.NamedTemporaryFile(suffix=".rac", mode="w", delete=False) as f:
             f.write("variable eitc:\n  formula: |\n    0\n")
             other_file = Path(f.name)
@@ -335,6 +334,7 @@ class TestCheckImports:
 # ============================================================================
 # quality/schema.py
 # ============================================================================
+
 
 class TestSchemaPatterns:
     def test_entity_pattern(self):
@@ -413,18 +413,14 @@ class TestCheckSchema:
 
     def test_literal_in_formula(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable eitc:\n  formula: |\n    earned_income * 12345\n"
-        )
+        rac_file.write_text("variable eitc:\n  formula: |\n    earned_income * 12345\n")
         issues, no_literals, all_valid = check_schema([rac_file])
         assert no_literals is False
         assert any("literal" in str(i.category) for i in issues)
 
     def test_allowed_literals(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable eitc:\n  formula: |\n    max(0, min(1, x))\n"
-        )
+        rac_file.write_text("variable eitc:\n  formula: |\n    max(0, min(1, x))\n")
         issues, no_literals, all_valid = check_schema([rac_file])
         assert no_literals is True
 
@@ -443,11 +439,7 @@ class TestCheckSchema:
 
     def test_comment_and_string_excluded_from_literals(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable eitc:\n  formula: |\n"
-            "    x = 0  # param is 12345\n"
-            "    y = 'amount is 500'\n"
-        )
+        rac_file.write_text("variable eitc:\n  formula: |\n    x = 0  # param is 12345\n    y = 'amount is 500'\n")
         issues, no_literals, all_valid = check_schema([rac_file])
         # Only the non-comment, non-string portions should be checked
         assert isinstance(issues, list)
@@ -460,18 +452,14 @@ class TestCheckSchema:
 
     def test_formula_block_exit(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable eitc:\n  formula: |\n    0\n\nvariable ctc:\n  dtype: Money\n"
-        )
+        rac_file.write_text("variable eitc:\n  formula: |\n    0\n\nvariable ctc:\n  dtype: Money\n")
         issues, no_literals, all_valid = check_schema([rac_file])
         assert isinstance(issues, list)
 
     def test_disallowed_float_literals(self, tmp_path):
         """Test that 2.0 and 3.0 are flagged as disallowed literals."""
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable eitc:\n  formula: |\n    x * 2.0 + 3.0\n"
-        )
+        rac_file.write_text("variable eitc:\n  formula: |\n    x * 2.0 + 3.0\n")
         issues, no_literals, all_valid = check_schema([rac_file])
         # 2.0 and 3.0 are no longer allowed
         assert no_literals is False
@@ -480,9 +468,7 @@ class TestCheckSchema:
     def test_literal_2_in_formula_flagged(self, tmp_path):
         """2 and 3 are no longer allowed in formulas."""
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "variable x:\n  formula: |\n    income * 2\n"
-        )
+        rac_file.write_text("variable x:\n  formula: |\n    income * 2\n")
         issues, no_literals, all_valid = check_schema([rac_file])
         assert no_literals is False
 
@@ -608,16 +594,12 @@ class TestCheckGrounding:
 
     def test_unreadable_file_skipped(self, tmp_path):
         bad_file = tmp_path / "nonexistent.rac"
-        issues, all_grounded = check_grounding(
-            [bad_file], rule_text="some text with 1000"
-        )
+        issues, all_grounded = check_grounding([bad_file], rule_text="some text with 1000")
         assert all_grounded is True
 
     def test_multiple_values_mixed(self, tmp_path):
         rac_file = tmp_path / "test.rac"
-        rac_file.write_text(
-            "amt:\n  from 2018-01-01: 1000\n  from 2025-01-01: 2200\n"
-        )
+        rac_file.write_text("amt:\n  from 2018-01-01: 1000\n  from 2025-01-01: 2200\n")
         rule_text = "amount of $1,000"
         issues, all_grounded = check_grounding([rac_file], rule_text=rule_text)
         assert all_grounded is False
