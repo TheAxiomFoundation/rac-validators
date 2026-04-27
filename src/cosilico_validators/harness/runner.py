@@ -3,7 +3,7 @@
 Orchestrates all validation checks:
 - Alignment (match rates against PolicyEngine, TAXSIM, etc.)
 - Coverage (implemented vs total variables)
-- Quality (RAC file quality checks)
+- Quality (RuleSpec file quality checks)
 - Review (agent-based subjective review)
 """
 
@@ -22,8 +22,8 @@ from .checkpoint import get_git_commit
 from .quality import run_quality_checks
 
 # Default paths
-COSILICO_US_ROOT = Path.home() / "CosilicoAI" / "cosilico-us"
-STATUTE_ROOT = COSILICO_US_ROOT / "statute"
+RULES_US_ROOT = Path.home() / "TheAxiomFoundation" / "rules-us"
+STATUTE_ROOT = RULES_US_ROOT / "statute"
 
 # Variable definitions with their sections
 VARIABLES = {
@@ -158,7 +158,7 @@ class ValidationHarness:
         implemented = 0
         by_section: dict[str, tuple[int, int]] = {}
 
-        # Check which variables are implemented (have .rac files with engine integration)
+        # Check which variables are implemented (have .yaml files with engine integration)
         # For now, just check if the section path exists
         for _var_name, meta in VARIABLES.items():
             section = meta["section"]
@@ -171,9 +171,9 @@ class ValidationHarness:
             impl, total = by_section[section]
             total += 1
 
-            # Check if .rac file exists
-            has_rac = (section_path / "a.rac").exists() or section_path.with_suffix(".rac").exists()
-            if has_rac:
+            # Check if .yaml file exists
+            has_rulespec = (section_path / "a.yaml").exists() or section_path.with_suffix(".yaml").exists()
+            if has_rulespec:
                 implemented += 1
                 impl += 1
 
@@ -187,9 +187,9 @@ class ValidationHarness:
 
     def _run_agent_review(self, changed_files: list[Path]) -> Optional[ReviewResult]:
         """Run agent-based review on changed files."""
-        # Filter to only .rac files
-        rac_files = [f for f in changed_files if f.suffix == ".rac"]
-        if not rac_files:
+        # Filter to only .yaml files
+        rulespec_files = [f for f in changed_files if f.suffix == ".yaml"]
+        if not rulespec_files:
             return None
 
         # For now, return a placeholder
@@ -201,7 +201,7 @@ class ValidationHarness:
             parameterization=7.0,
             test_quality=7.0,
             feedback="Agent review not yet implemented. Run with --review to enable.",
-            reviewed_files=[str(f) for f in rac_files],
+            reviewed_files=[str(f) for f in rulespec_files],
         )
 
 

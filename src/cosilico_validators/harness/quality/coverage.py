@@ -1,4 +1,4 @@
-"""Test coverage analysis for .rac files.
+"""Test coverage analysis for .yaml files.
 
 Checks that variables with formulas have associated tests.
 """
@@ -18,8 +18,8 @@ TESTS_PATTERN = re.compile(r"^\s+tests:")
 TEST_CASE_PATTERN = re.compile(r"^\s+-\s+(?:name:|inputs:)")
 
 
-def check_test_coverage(rac_files: list[Path]) -> tuple[float, list[QualityIssue]]:
-    """Check test coverage for .rac files.
+def check_test_coverage(rulespec_files: list[Path]) -> tuple[float, list[QualityIssue]]:
+    """Check test coverage for .yaml files.
 
     Returns:
         Tuple of (coverage_rate, issues)
@@ -29,9 +29,9 @@ def check_test_coverage(rac_files: list[Path]) -> tuple[float, list[QualityIssue
     total_variables = 0
     variables_with_tests = 0
 
-    for rac_file in rac_files:
+    for rulespec_file in rulespec_files:
         try:
-            content = rac_file.read_text()
+            content = rulespec_file.read_text()
             lines = content.split("\n")
         except Exception:
             continue
@@ -55,7 +55,7 @@ def check_test_coverage(rac_files: list[Path]) -> tuple[float, list[QualityIssue
                     else:
                         issues.append(
                             QualityIssue(
-                                file=str(rac_file),
+                                file=str(rulespec_file),
                                 line=current_variable_line,
                                 category="test_coverage",
                                 severity="warning",
@@ -93,7 +93,7 @@ def check_test_coverage(rac_files: list[Path]) -> tuple[float, list[QualityIssue
             else:
                 issues.append(
                     QualityIssue(
-                        file=str(rac_file),
+                        file=str(rulespec_file),
                         line=current_variable_line,
                         category="test_coverage",
                         severity="warning",

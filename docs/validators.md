@@ -1,6 +1,6 @@
 # Oracle validators
 
-`rac-validators` runs an encoded rule through multiple independent tax
+`rulespec-validators` runs an encoded rule through multiple independent tax
 calculators (the "oracles") and compares their outputs. Each oracle is
 a separate validator class under
 `src/cosilico_validators/validators/`. This document catalogs them so

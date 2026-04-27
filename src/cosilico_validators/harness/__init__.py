@@ -1,7 +1,7 @@
 """Validation harness for Cosilico encoding work.
 
 Provides comprehensive validation across multiple external calculators,
-quality checks for .rac files, and PR scorecard generation.
+quality checks for .yaml files, and PR scorecard generation.
 """
 
 from dataclasses import dataclass, field
@@ -62,7 +62,7 @@ class CoverageResult:
 
 @dataclass
 class QualityIssue:
-    """A quality issue found in a .rac file."""
+    """A quality issue found in a .yaml file."""
 
     file: str
     line: Optional[int]
@@ -73,7 +73,7 @@ class QualityIssue:
 
 @dataclass
 class QualityResult:
-    """Quality metrics for .rac files."""
+    """Quality metrics for .yaml files."""
 
     test_coverage: float  # % variables with tests
     no_literals_pass: bool

@@ -107,7 +107,7 @@ class TestHarnessResult:
             no_literals_pass=True,
             all_imports_valid=True,
             all_dtypes_valid=True,
-            issues=[QualityIssue(file="test.rac", line=1, category="test", severity="warning", message="test")],
+            issues=[QualityIssue(file="test.yaml", line=1, category="test", severity="warning", message="test")],
         )
         review = None
         if with_review:
@@ -118,7 +118,7 @@ class TestHarnessResult:
                 parameterization=7.0,
                 test_quality=7.0,
                 feedback="Good",
-                reviewed_files=["test.rac"],
+                reviewed_files=["test.yaml"],
             )
         return HarnessResult(
             timestamp="2024-01-01",
@@ -145,7 +145,7 @@ class TestHarnessResult:
         d = result.to_dict()
         assert d["review"]["overall_score"] == 7.0
         assert d["review"]["feedback"] == "Good"
-        assert d["review"]["reviewed_files"] == ["test.rac"]
+        assert d["review"]["reviewed_files"] == ["test.yaml"]
 
 
 class TestCheckpointDataclass:
@@ -338,10 +338,10 @@ class TestValidationHarness:
     def test_coverage_checks(self, tmp_path):
         statute_root = tmp_path / "statute"
         statute_root.mkdir()
-        # Create a .rac file for one section
+        # Create a .yaml file for one section
         section_path = statute_root / "26" / "32"
         section_path.mkdir(parents=True)
-        (section_path / "a.rac").write_text("variable eitc:\n  formula: |\n    0")
+        (section_path / "a.yaml").write_text("variable eitc:\n  formula: |\n    0")
 
         with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(statute_root=statute_root, run_alignment=False, run_quality=False)
@@ -349,16 +349,16 @@ class TestValidationHarness:
             assert result.coverage.total == len(VARIABLES)
             assert result.coverage.implemented >= 1
 
-    def test_agent_review_no_rac_files(self):
+    def test_agent_review_no_rulespec_files(self):
         with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(run_alignment=False, run_quality=False, run_review=True)
             result = h.run_full_validation(changed_files=[Path("test.py")])
             assert result.review is None
 
-    def test_agent_review_with_rac_files(self):
+    def test_agent_review_with_rulespec_files(self):
         with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(run_alignment=False, run_quality=False, run_review=True)
-            result = h.run_full_validation(changed_files=[Path("test.rac")])
+            result = h.run_full_validation(changed_files=[Path("test.yaml")])
             assert result.review is not None
             assert result.review.overall_score == 7.0
 
@@ -366,7 +366,7 @@ class TestValidationHarness:
         """Test run_full_validation with run_quality=True to cover line 96."""
         statute_root = tmp_path / "statute"
         statute_root.mkdir()
-        (statute_root / "test.rac").write_text("variable x:\n  formula: |\n    0\n")
+        (statute_root / "test.yaml").write_text("variable x:\n  formula: |\n    0\n")
 
         with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(
@@ -453,7 +453,7 @@ class TestGenerateScorecard:
         if with_issues:
             issues = [
                 QualityIssue(
-                    file="test.rac",
+                    file="test.yaml",
                     line=i,
                     category="test",
                     severity="error" if i <= 5 else "warning",
@@ -482,7 +482,7 @@ class TestGenerateScorecard:
                 parameterization=7.0,
                 test_quality=7.0,
                 feedback="Line 1\nLine 2",
-                reviewed_files=["test.rac"],
+                reviewed_files=["test.yaml"],
             )
             if with_review
             else None,
@@ -512,7 +512,7 @@ class TestGenerateScorecard:
         sc = generate_scorecard(result)
         assert "Agent Review" in sc
         assert "7.0/10" in sc
-        assert "test.rac" in sc
+        assert "test.yaml" in sc
 
     def test_scorecard_with_issues(self):
         result = self._make_result(with_issues=True)

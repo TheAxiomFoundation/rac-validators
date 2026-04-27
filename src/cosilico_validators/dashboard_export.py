@@ -15,7 +15,7 @@ Usage:
 #   THIS FILE IS A VALIDATOR ONLY - NO TAX RULES ALLOWED HERE!                 #
 #                                                                              #
 #   ALL TAX CALCULATION LOGIC MUST COME FROM:                                  #
-#     - cosilico-us/*.rac files (statute encodings)                            #
+#     - rules-us/*.yaml files (statute encodings)                            #
 #     - cosilico-engine (DSL executor)                                         #
 #                                                                              #
 #   This validator ONLY:                                                       #
@@ -29,7 +29,7 @@ Usage:
 #     - Income aggregations                                                    #
 #     - ANY tax rule implementations                                           #
 #                                                                              #
-#   If validation fails, FIX THE .RAC FILES, not this validator!               #
+#   If validation fails, FIX THE .RuleSpec FILES, not this validator!               #
 #                                                                              #
 ################################################################################
 """
@@ -182,26 +182,26 @@ STD_DEDUCTION_PARAMS_2024 = {
 }
 
 
-def load_rac_file(section: str) -> Optional[str]:
-    """Load .rac file for a given section from cosilico-us.
+def load_rulespec_file(section: str) -> Optional[str]:
+    """Load .yaml file for a given section from rules-us.
 
     Args:
         section: USC section like "26/32" or "26/63"
 
     Returns:
-        Contents of the .rac file, or None if not found
+        Contents of the .yaml file, or None if not found
     """
-    statute_dir = Path.home() / "CosilicoAI" / "cosilico-us" / "statute"
+    statute_dir = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute"
 
-    # Try direct path first (e.g., statute/26/32.rac)
-    rac_path = statute_dir / f"{section}.rac"
-    if rac_path.exists():
-        return rac_path.read_text()
+    # Try direct path first (e.g., statute/26/32.yaml)
+    rulespec_path = statute_dir / f"{section}.yaml"
+    if rulespec_path.exists():
+        return rulespec_path.read_text()
 
     # Try with /a suffix (common pattern)
-    rac_path = statute_dir / section / "a.rac"
-    if rac_path.exists():
-        return rac_path.read_text()
+    rulespec_path = statute_dir / section / "a.yaml"
+    if rulespec_path.exists():
+        return rulespec_path.read_text()
 
     return None
 
@@ -234,7 +234,7 @@ def result_to_section(result: ComparisonResult, n_households: int, meta: dict, i
             f"Diff: ${(result.cosilico_total - result.policyengine_total) / 1e9:+.1f}B"
         )
         if implemented
-        else "Not yet implemented in .rac files",
+        else "Not yet implemented in .yaml files",
     }
 
 
@@ -243,7 +243,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
 
     This function:
     1. Loads the Cosilico engine
-    2. For each variable, loads the .rac file and executes it
+    2. For each variable, loads the .yaml file and executes it
     3. Compares against PolicyEngine outputs
     4. Returns dashboard-formatted results
     """
@@ -260,8 +260,8 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
         VectorizedExecutor, Parser, DependencyResolver = load_cosilico_engine()
         engine_available = True
 
-        # Create dependency resolver pointing to cosilico-us
-        statute_root = Path.home() / "CosilicoAI" / "cosilico-us"
+        # Create dependency resolver pointing to rules-us
+        statute_root = Path.home() / "TheAxiomFoundation" / "rules-us"
         dep_resolver = DependencyResolver(statute_root=statute_root)
     except ImportError as e:
         print(f"  Warning: Could not load engine: {e}")
@@ -281,18 +281,18 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             # Get PolicyEngine values
             pe_values = np.array(sim.calculate(var_name, year))
 
-            # Try to load and execute .rac file
-            rac_code = load_rac_file(meta["section"])
+            # Try to load and execute .yaml file
+            rulespec_code = load_rulespec_file(meta["section"])
             implemented = False
             cos_values = None
 
             # Special handling for EITC - we have working engine integration
             if var_name == "eitc" and engine_available:
                 try:
-                    # Load EITC formula from cosilico-us/statute/26/32.rac
-                    eitc_rac = Path.home() / "CosilicoAI" / "cosilico-us" / "statute" / "26" / "32.rac"
-                    if eitc_rac.exists():
-                        rac_code = eitc_rac.read_text()
+                    # Load EITC formula from rules-us/statute/26/32.yaml
+                    eitc_rulespec = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "32.yaml"
+                    if eitc_rulespec.exists():
+                        rulespec_code = eitc_rulespec.read_text()
 
                         # Build inputs from dataset
                         inputs = {
@@ -306,7 +306,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         # Execute through engine
                         executor = VectorizedExecutor(parameters=EITC_PARAMS_2024)
                         results_dict = executor.execute(
-                            code=rac_code, inputs=inputs, output_variables=["eitc_standalone"]
+                            code=rulespec_code, inputs=inputs, output_variables=["eitc_standalone"]
                         )
                         cos_values = results_dict["eitc_standalone"]
                         implemented = True
@@ -318,9 +318,9 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             if var_name == "net_investment_income_tax" and engine_available:
                 try:
                     # Load NIIT formula from standalone validation file (no imports)
-                    niit_rac = Path.home() / "CosilicoAI" / "cosilico-us" / "statute" / "26" / "1411.rac"
-                    if niit_rac.exists():
-                        rac_code = niit_rac.read_text()
+                    niit_rulespec = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "1411.yaml"
+                    if niit_rulespec.exists():
+                        rulespec_code = niit_rulespec.read_text()
 
                         # Build inputs from dataset
                         # Section 1411(d): MAGI = AGI + foreign earned income exclusion
@@ -335,7 +335,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         # Execute through engine using standalone version (no imports)
                         executor = VectorizedExecutor(parameters=NIIT_PARAMS_2024)
                         results_dict = executor.execute(
-                            code=rac_code, inputs=inputs, output_variables=["niit_standalone"]
+                            code=rulespec_code, inputs=inputs, output_variables=["niit_standalone"]
                         )
                         cos_values = results_dict["niit_standalone"]
                         implemented = True
@@ -352,11 +352,11 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             elif var_name == "adjusted_gross_income" and engine_available and dep_resolver:
                 try:
                     # Build inputs from CommonDataset income fields
-                    # Map to .rac variable names from imports in 26/62/a.rac
+                    # Map to .yaml variable names from imports in 26/62/a.yaml
                     # Note: These are TaxUnit-level inputs (dataset.n_records)
                     inputs = {
                         # Gross income components (26 USC Section 61)
-                        # Names must match imports in 26/62/a.rac
+                        # Names must match imports in 26/62/a.yaml
                         "wages": dataset.wages,
                         "salaries": np.zeros(dataset.n_records),  # Combined in wages
                         "tips": np.zeros(dataset.n_records),  # Combined in wages
@@ -499,10 +499,10 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             # cdcc = applicable_percentage * min(expenses, expense_limit, earned_income_limit)
             elif var_name == "cdcc" and engine_available:
                 try:
-                    # Load CDCC formula from cosilico-us/statute/26/21/a.rac
-                    cdcc_rac = Path.home() / "CosilicoAI" / "cosilico-us" / "statute" / "26" / "21" / "a.rac"
-                    if cdcc_rac.exists():
-                        rac_code = cdcc_rac.read_text()
+                    # Load CDCC formula from rules-us/statute/26/21/a.yaml
+                    cdcc_rulespec = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "21" / "a.yaml"
+                    if cdcc_rulespec.exists():
+                        rulespec_code = cdcc_rulespec.read_text()
 
                         # Build inputs from CommonDataset (now includes CDCC fields)
                         # Note: dataset.childcare_expenses and cdcc_qualifying_individuals
@@ -523,7 +523,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         # Execute through engine using standalone formula
                         executor = VectorizedExecutor(parameters=CDCC_PARAMS_2024)
                         results_dict = executor.execute(
-                            code=rac_code, inputs=inputs, output_variables=["cdcc_standalone"]
+                            code=rulespec_code, inputs=inputs, output_variables=["cdcc_standalone"]
                         )
                         cos_values = results_dict["cdcc_standalone"]
                         implemented = True
@@ -536,10 +536,12 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             # Depends on: filing_status, age, blind status, dependent status
             elif var_name == "standard_deduction" and engine_available:
                 try:
-                    # Load Standard Deduction formula from cosilico-us/statute/26/63/c.rac
-                    std_ded_rac = Path.home() / "CosilicoAI" / "cosilico-us" / "statute" / "26" / "63" / "c.rac"
-                    if std_ded_rac.exists():
-                        rac_code = std_ded_rac.read_text()
+                    # Load Standard Deduction formula from rules-us/statute/26/63/c.yaml
+                    std_ded_rulespec = (
+                        Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "63" / "c.yaml"
+                    )
+                    if std_ded_rulespec.exists():
+                        rulespec_code = std_ded_rulespec.read_text()
 
                         # Build inputs for standalone formula
                         inputs = {
@@ -560,7 +562,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         # Execute through engine using standalone formula
                         executor = VectorizedExecutor(parameters=STD_DEDUCTION_PARAMS_2024)
                         results_dict = executor.execute(
-                            code=rac_code, inputs=inputs, output_variables=["standard_deduction_standalone"]
+                            code=rulespec_code, inputs=inputs, output_variables=["standard_deduction_standalone"]
                         )
                         cos_values = results_dict["standard_deduction_standalone"]
                         implemented = True
@@ -667,7 +669,7 @@ def main(year: int, output: Optional[str]):
     print(f"Coverage: {data['coverage']['implemented']}/{data['coverage']['total']} variables via engine")
     print(f"Match rate (implemented): {data['overall']['matchRate'] * 100:.1f}%")
     print(f"MAE: ${data['overall']['meanAbsoluteError']:.2f}")
-    print("\nNote: Variables show 0% until .rac→engine integration is complete")
+    print("\nNote: Variables show 0% until .yaml→engine integration is complete")
 
 
 if __name__ == "__main__":  # pragma: no cover

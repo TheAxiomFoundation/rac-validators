@@ -134,7 +134,7 @@ def _make_harness_result(with_alignment=False, with_issues=False, with_review=Fa
     if with_issues:
         issues = [
             QualityIssue(
-                file="test.rac",
+                file="test.yaml",
                 line=i,
                 category="schema",
                 severity="error" if i == 1 else "warning",
@@ -158,7 +158,7 @@ def _make_harness_result(with_alignment=False, with_issues=False, with_review=Fa
             parameterization=7.0,
             test_quality=7.0,
             feedback="Looks good",
-            reviewed_files=["test.rac"],
+            reviewed_files=["test.yaml"],
         )
     return HarnessResult(
         timestamp="2024-01-01T00:00:00",

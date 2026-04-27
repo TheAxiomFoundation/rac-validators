@@ -38,7 +38,7 @@ All of these must be TRUE for completion:
 4. **Fix the issue**:
    - If data mapping issue: fix `record_comparison.py`
    - If Cosilico formula issue: fix `cosilico_runner.py`
-   - If missing statute: create `.rac` file in `cosilico-us`
+   - If missing statute: create `.yaml` file in `rules-us`
 
 5. **Validate fix**: Re-run comparison, confirm improvement
 
@@ -48,12 +48,12 @@ All of these must be TRUE for completion:
 
 - `/Users/maxghenis/CosilicoAI/cosilico-data-sources/micro/us/cosilico_runner.py` - Cosilico calculations
 - `/Users/maxghenis/CosilicoAI/cosilico-validators/src/cosilico_validators/comparison/record_comparison.py` - Comparison infrastructure
-- `/Users/maxghenis/CosilicoAI/cosilico-us/statute/26/` - Statute encodings
+- `/Users/maxghenis/CosilicoAI/rules-us/statute/26/` - Statute encodings
 
 ## Architecture Rules
 
 **CRITICAL**:
-- Policy calculations ONLY in `cosilico_runner.py` or `.rac` files
+- Policy calculations ONLY in `cosilico_runner.py` or `.yaml` files
 - `tax_unit_builder.py` is DATA ONLY - run validator if you touch it:
   ```bash
   python validate_data_policy_separation.py

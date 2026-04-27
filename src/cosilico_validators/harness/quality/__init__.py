@@ -1,4 +1,4 @@
-"""Quality checks for .rac files."""
+"""Quality checks for .yaml files."""
 
 from pathlib import Path
 from typing import Optional
@@ -16,22 +16,22 @@ def run_quality_checks(
     rule_text: Optional[str] = None,
     rule_text_by_file: Optional[dict[str, str]] = None,
 ) -> QualityResult:
-    """Run all quality checks on .rac files.
+    """Run all quality checks on .yaml files.
 
     Args:
-        statute_root: Root directory of statute files (e.g., cosilico-us/statute)
+        statute_root: Root directory of statute files (e.g., rules-us/statute)
         changed_files: If provided, only check these files. Otherwise check all.
 
     Returns:
         QualityResult with all findings
     """
-    # Find all .rac files if not specified
+    # Find all .yaml files if not specified
     if changed_files is None:
-        rac_files = list(statute_root.rglob("*.rac"))
+        rulespec_files = list(statute_root.rglob("*.yaml"))
     else:
-        rac_files = [f for f in changed_files if f.suffix == ".rac"]
+        rulespec_files = [f for f in changed_files if f.suffix == ".yaml"]
 
-    if not rac_files:
+    if not rulespec_files:
         return QualityResult(
             test_coverage=1.0,
             no_literals_pass=True,
@@ -44,20 +44,20 @@ def run_quality_checks(
     all_issues: list[QualityIssue] = []
 
     # Schema checks (entity, period, dtype, no literals)
-    schema_issues, no_literals_pass, all_dtypes_valid = check_schema(rac_files)
+    schema_issues, no_literals_pass, all_dtypes_valid = check_schema(rulespec_files)
     all_issues.extend(schema_issues)
 
     # Test coverage
-    coverage_rate, coverage_issues = check_test_coverage(rac_files)
+    coverage_rate, coverage_issues = check_test_coverage(rulespec_files)
     all_issues.extend(coverage_issues)
 
     # Import validation
-    import_issues, all_imports_valid = check_imports(rac_files, statute_root)
+    import_issues, all_imports_valid = check_imports(rulespec_files, statute_root)
     all_issues.extend(import_issues)
 
     # Source grounding
     grounding_issues, all_grounded = check_grounding(
-        rac_files, rule_text=rule_text, rule_text_by_file=rule_text_by_file
+        rulespec_files, rule_text=rule_text, rule_text_by_file=rule_text_by_file
     )
     all_issues.extend(grounding_issues)
 

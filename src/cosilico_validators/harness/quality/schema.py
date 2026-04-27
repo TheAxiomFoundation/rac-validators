@@ -1,4 +1,4 @@
-"""Schema validation for .rac files.
+"""Schema validation for .yaml files.
 
 Checks:
 - Valid entity types: Person, TaxUnit, Household, Family
@@ -7,7 +7,7 @@ Checks:
 - No hardcoded literals (only -1, 0, 1 allowed)
 """
 
-# NOTE: This may move to rac-compile. See docs/scope.md.
+# NOTE: This may move to rulespec-compile. See docs/scope.md.
 
 import re
 from pathlib import Path
@@ -60,8 +60,8 @@ LITERAL_PATTERN = re.compile(
 )
 
 
-def check_schema(rac_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]:
-    """Check schema validity of .rac files.
+def check_schema(rulespec_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]:
+    """Check schema validity of .yaml files.
 
     Returns:
         Tuple of (issues, no_literals_pass, all_dtypes_valid)
@@ -70,14 +70,14 @@ def check_schema(rac_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]
     has_literal_issues = False
     has_dtype_issues = False
 
-    for rac_file in rac_files:
+    for rulespec_file in rulespec_files:
         try:
-            content = rac_file.read_text()
+            content = rulespec_file.read_text()
             lines = content.split("\n")
         except Exception as e:
             issues.append(
                 QualityIssue(
-                    file=str(rac_file),
+                    file=str(rulespec_file),
                     line=None,
                     category="schema",
                     severity="error",
@@ -103,7 +103,7 @@ def check_schema(rac_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]
                 if entity not in VALID_ENTITIES:
                     issues.append(
                         QualityIssue(
-                            file=str(rac_file),
+                            file=str(rulespec_file),
                             line=i,
                             category="schema",
                             severity="error",
@@ -119,7 +119,7 @@ def check_schema(rac_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]
                 if period not in VALID_PERIODS:
                     issues.append(
                         QualityIssue(
-                            file=str(rac_file),
+                            file=str(rulespec_file),
                             line=i,
                             category="schema",
                             severity="error",
@@ -136,7 +136,7 @@ def check_schema(rac_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]
                 if not (dtype in VALID_DTYPES or dtype.startswith("Enum")):
                     issues.append(
                         QualityIssue(
-                            file=str(rac_file),
+                            file=str(rulespec_file),
                             line=i,
                             category="schema",
                             severity="error",
@@ -163,7 +163,7 @@ def check_schema(rac_files: list[Path]) -> tuple[list[QualityIssue], bool, bool]
 
                     issues.append(
                         QualityIssue(
-                            file=str(rac_file),
+                            file=str(rulespec_file),
                             line=i,
                             category="literal",
                             severity="error",

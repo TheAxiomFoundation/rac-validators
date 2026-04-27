@@ -1,11 +1,11 @@
-"""Source grounding validation for .rac files.
+"""Source grounding validation for .yaml files.
 
 Checks that all numeric values in parameter/variable definitions are
 present in the source rule text. Encodings must be grounded in the
 source — no invented, hallucinated, or cross-referenced values.
 """
 
-# NOTE: This may move to rac-compile. See docs/scope.md.
+# NOTE: This may move to rulespec-compile. See docs/scope.md.
 
 import contextlib
 import re
@@ -180,14 +180,14 @@ def extract_numbers_from_text(text: str) -> set[float]:
 
 
 def check_grounding(
-    rac_files: list[Path],
+    rulespec_files: list[Path],
     rule_text: str | None = None,
     rule_text_by_file: dict[str, str] | None = None,
 ) -> tuple[list[QualityIssue], bool]:
-    """Check that all numeric values in .rac files are grounded in the rule text.
+    """Check that all numeric values in .yaml files are grounded in the rule text.
 
     Args:
-        rac_files: List of .rac files to check.
+        rulespec_files: List of .yaml files to check.
         rule_text: The full source rule text. All numbers in encodings
             must appear somewhere in this text.
         rule_text_by_file: Optional per-file rule text mapping (file path -> text).
@@ -205,14 +205,14 @@ def check_grounding(
     # Extract numbers from the full rule text
     rule_numbers = extract_numbers_from_text(rule_text) if rule_text else set()
 
-    for rac_file in rac_files:
+    for rulespec_file in rulespec_files:
         try:
-            content = rac_file.read_text()
+            content = rulespec_file.read_text()
         except Exception:
             continue
 
         # Get file-specific rule text if available
-        file_key = str(rac_file)
+        file_key = str(rulespec_file)
         file_rule_numbers = rule_numbers.copy()
         if rule_text_by_file and file_key in rule_text_by_file:
             file_rule_numbers |= extract_numbers_from_text(rule_text_by_file[file_key])
@@ -226,7 +226,7 @@ def check_grounding(
             if val not in file_rule_numbers:
                 issues.append(
                     QualityIssue(
-                        file=str(rac_file),
+                        file=str(rulespec_file),
                         line=line_num,
                         category="grounding",
                         severity="error",

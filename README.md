@@ -6,13 +6,13 @@ External validation framework for Cosilico DSL encodings.
 
 **This tool is for external validation, not testing.**
 
-| Aspect | Tests (in cosilico-us) | Validation (this repo) |
+| Aspect | Tests (in rules-us) | Validation (this repo) |
 |--------|------------------------|------------------------|
 | Purpose | Verify encoding matches statute | Compare against external tools |
 | Authority | Authoritative—our truth | Informational—tools may have bugs |
 | Approach | TDD—test-first development | Audit—report consistency |
 | Output | Pass/Fail | Comparison report with disagreements |
-| Location | `cosilico-us/26/32/tests/` | `cosilico-validators` |
+| Location | `rules-us/26/32/tests/` | `cosilico-validators` |
 
 Example validation output:
 ```

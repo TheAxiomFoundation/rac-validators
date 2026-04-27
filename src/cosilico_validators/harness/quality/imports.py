@@ -1,10 +1,10 @@
-"""Import validation for .rac files.
+"""Import validation for .yaml files.
 
 Checks that all imports reference existing files and variables.
 Format: path#variable or path#variable as alias
 """
 
-# NOTE: This may move to rac-compile. See docs/scope.md.
+# NOTE: This may move to rulespec-compile. See docs/scope.md.
 
 import re
 from pathlib import Path
@@ -28,11 +28,11 @@ IMPORT_PATTERN = re.compile(
 )
 
 
-def check_imports(rac_files: list[Path], statute_root: Path) -> tuple[list[QualityIssue], bool]:
+def check_imports(rulespec_files: list[Path], statute_root: Path) -> tuple[list[QualityIssue], bool]:
     """Check that all imports are valid.
 
     Args:
-        rac_files: List of .rac files to check
+        rulespec_files: List of .yaml files to check
         statute_root: Root directory for resolving import paths
 
     Returns:
@@ -44,20 +44,20 @@ def check_imports(rac_files: list[Path], statute_root: Path) -> tuple[list[Quali
     # Build index of all variables in all files
     variable_index: dict[str, set[str]] = {}  # path -> set of variable names
 
-    for rac_file in rac_files:
+    for rulespec_file in rulespec_files:
         try:
-            content = rac_file.read_text()
+            content = rulespec_file.read_text()
             # Get relative path from statute root
             try:
-                rel_path = rac_file.relative_to(statute_root)
-                # Convert to import format: statute/26/32/a.rac -> 26/32/a
+                rel_path = rulespec_file.relative_to(statute_root)
+                # Convert to import format: statute/26/32/a.yaml -> 26/32/a
                 path_key = str(rel_path.with_suffix("")).replace("\\", "/")
                 # Also handle if statute_root already includes 'statute'
                 if path_key.startswith("statute/"):
                     path_key = path_key[8:]
             except ValueError:
                 # File not under statute_root, use filename
-                path_key = rac_file.stem
+                path_key = rulespec_file.stem
 
             # Find all variable declarations
             variables = set()
@@ -69,9 +69,9 @@ def check_imports(rac_files: list[Path], statute_root: Path) -> tuple[list[Quali
             continue
 
     # Now check imports in each file
-    for rac_file in rac_files:
+    for rulespec_file in rulespec_files:
         try:
-            content = rac_file.read_text()
+            content = rulespec_file.read_text()
             lines = content.split("\n")
         except Exception:
             continue
@@ -99,7 +99,7 @@ def check_imports(rac_files: list[Path], statute_root: Path) -> tuple[list[Quali
                     # Check if path exists
                     # Try different file extensions
                     found_file = False
-                    for suffix in [".rac", ""]:
+                    for suffix in [".yaml", ""]:
                         check_path = statute_root / f"{import_path}{suffix}"
                         if check_path.exists():
                             found_file = True
@@ -113,7 +113,7 @@ def check_imports(rac_files: list[Path], statute_root: Path) -> tuple[list[Quali
                     if not found_file and import_path not in variable_index:
                         issues.append(
                             QualityIssue(
-                                file=str(rac_file),
+                                file=str(rulespec_file),
                                 line=i,
                                 category="import",
                                 severity="warning",
@@ -127,7 +127,7 @@ def check_imports(rac_files: list[Path], statute_root: Path) -> tuple[list[Quali
                     if import_path in variable_index and var_name not in variable_index[import_path]:
                         issues.append(
                             QualityIssue(
-                                file=str(rac_file),
+                                file=str(rulespec_file),
                                 line=i,
                                 category="import",
                                 severity="warning",

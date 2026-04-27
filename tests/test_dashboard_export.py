@@ -16,7 +16,7 @@ from cosilico_validators.dashboard_export import (
     VARIABLES,
     get_git_commit,
     load_cosilico_engine,
-    load_rac_file,
+    load_rulespec_file,
     main,
     result_to_section,
     run_export,
@@ -39,38 +39,38 @@ class TestGetGitCommit:
             assert get_git_commit() == "unknown"
 
 
-class TestLoadRacFile:
+class TestLoadRuleSpecFile:
     def test_load_nonexistent(self):
-        result = load_rac_file("nonexistent/section")
+        result = load_rulespec_file("nonexistent/section")
         assert result is None or isinstance(result, str)
 
     def test_load_direct_path(self, tmp_path):
         # Create a fake statute directory structure
-        statute_dir = tmp_path / "CosilicoAI" / "cosilico-us" / "statute"
-        rac_dir = statute_dir / "26"
-        rac_dir.mkdir(parents=True)
-        (rac_dir / "32.rac").write_text("test content")
+        statute_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "statute"
+        rulespec_dir = statute_dir / "26"
+        rulespec_dir.mkdir(parents=True)
+        (rulespec_dir / "32.yaml").write_text("test content")
 
         with patch("cosilico_validators.dashboard_export.Path.home", return_value=tmp_path):
-            result = load_rac_file("26/32")
+            result = load_rulespec_file("26/32")
             assert result == "test content"
 
     def test_load_subdirectory_path(self, tmp_path):
-        statute_dir = tmp_path / "CosilicoAI" / "cosilico-us" / "statute"
-        rac_dir = statute_dir / "26" / "63"
-        rac_dir.mkdir(parents=True)
-        (rac_dir / "a.rac").write_text("sub content")
+        statute_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "statute"
+        rulespec_dir = statute_dir / "26" / "63"
+        rulespec_dir.mkdir(parents=True)
+        (rulespec_dir / "a.yaml").write_text("sub content")
 
         with patch("cosilico_validators.dashboard_export.Path.home", return_value=tmp_path):
-            result = load_rac_file("26/63")
+            result = load_rulespec_file("26/63")
             assert result == "sub content"
 
     def test_load_not_found(self, tmp_path):
-        statute_dir = tmp_path / "CosilicoAI" / "cosilico-us" / "statute"
+        statute_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "statute"
         statute_dir.mkdir(parents=True)
 
         with patch("cosilico_validators.dashboard_export.Path.home", return_value=tmp_path):
-            result = load_rac_file("99/99")
+            result = load_rulespec_file("99/99")
             assert result is None
 
 
@@ -256,7 +256,7 @@ class TestRunExport:
             patch("cosilico_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
             patch("cosilico_validators.dashboard_export.compare_variable", return_value=mock_result),
             patch("cosilico_validators.dashboard_export.load_cosilico_engine", side_effect=ImportError("no engine")),
-            patch("cosilico_validators.dashboard_export.load_rac_file", return_value=None),
+            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value=None),
         ):
             data = run_export(year=2024, output_path=output_path)
 
@@ -341,9 +341,9 @@ class TestRunExport:
                 "cosilico_validators.dashboard_export.load_cosilico_engine",
                 return_value=(mock_executor_cls, mock_parser, mock_dep_resolver_cls),
             ),
-            patch("cosilico_validators.dashboard_export.load_rac_file", return_value="mock rac code"),
+            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value="mock rulespec code"),
             patch("pathlib.Path.exists", return_value=True),
-            patch("pathlib.Path.read_text", return_value="mock rac code"),
+            patch("pathlib.Path.read_text", return_value="mock rulespec code"),
         ):
             data = run_export(year=2024)
 
@@ -403,7 +403,7 @@ class TestRunExport:
             patch("cosilico_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
             patch("cosilico_validators.dashboard_export.compare_variable", return_value=mock_result),
             patch("cosilico_validators.dashboard_export.load_cosilico_engine", side_effect=ImportError("no engine")),
-            patch("cosilico_validators.dashboard_export.load_rac_file", return_value=None),
+            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value=None),
         ):
             data = run_export(year=2024)
             assert isinstance(data, dict)
@@ -495,9 +495,9 @@ class TestRunExportEngineBranches:
         mock_executor_cls = MagicMock(return_value=mock_executor)
         mock_dep_resolver_cls = MagicMock()
 
-        mock_rac_path = MagicMock()
-        mock_rac_path.exists.return_value = True
-        mock_rac_path.read_text.return_value = "mock rac code"
+        mock_rulespec_path = MagicMock()
+        mock_rulespec_path.exists.return_value = True
+        mock_rulespec_path.read_text.return_value = "mock rulespec code"
 
         with (
             patch.dict("sys.modules", {"policyengine_us": mock_pe_module}),
@@ -507,13 +507,13 @@ class TestRunExportEngineBranches:
                 "cosilico_validators.dashboard_export.load_cosilico_engine",
                 return_value=(mock_executor_cls, MagicMock(), mock_dep_resolver_cls),
             ),
-            patch("cosilico_validators.dashboard_export.load_rac_file", return_value="mock rac"),
+            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value="mock rulespec"),
             patch("cosilico_validators.dashboard_export.Path") as mock_path_cls,
         ):
-            # Make Path.home() / ... / "statute" / "26" / "32.rac" all return mock_rac_path
-            mock_path_cls.home.return_value.__truediv__ = MagicMock(return_value=mock_rac_path)
-            mock_path_cls.__truediv__ = MagicMock(return_value=mock_rac_path)
-            mock_rac_path.__truediv__ = MagicMock(return_value=mock_rac_path)
+            # Make Path.home() / ... / "statute" / "26" / "32.yaml" all return mock_rulespec_path
+            mock_path_cls.home.return_value.__truediv__ = MagicMock(return_value=mock_rulespec_path)
+            mock_path_cls.__truediv__ = MagicMock(return_value=mock_rulespec_path)
+            mock_rulespec_path.__truediv__ = MagicMock(return_value=mock_rulespec_path)
 
             data = run_export(year=2024)
             return data

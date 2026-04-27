@@ -4,7 +4,7 @@ Compares weighted totals from Cosilico's CPS calculations against
 PolicyEngine, TAXSIM, and other validators.
 
 Variable mappings are loaded from variable_mappings.yaml, which references
-statute definitions in cosilico-us (e.g., 26/32/eitc.rac::earned_income_tax_credit).
+statute definitions in rules-us (e.g., 26/32/eitc.yaml::earned_income_tax_credit).
 """
 
 import contextlib
@@ -23,13 +23,13 @@ def load_variable_mappings() -> dict[str, dict]:
     """Load variable mappings from YAML file.
 
     The statute field is the source of truth for Cosilico variables.
-    Format: {title}/{section}/{file}.rac::{formula_name}
+    Format: {title}/{section}/{file}.yaml::{formula_name}
     The formula_name after :: is used as the output column name.
 
     Returns:
         Dict mapping variable names to their configurations, including:
         - title: Human-readable name
-        - statute: Path to statute definition (e.g., 26/32/eitc.rac::earned_income_tax_credit)
+        - statute: Path to statute definition (e.g., 26/32/eitc.yaml::earned_income_tax_credit)
         - cosilico_col: Derived from statute (the formula name after ::)
         - pe_var: Variable name in PolicyEngine
         - tc_var: Variable name in Tax-Calculator

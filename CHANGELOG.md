@@ -1,3 +1,3 @@
 # Changelog
 
-All notable changes to rac-validators will be documented here.
+All notable changes to rulespec-validators will be documented here.
