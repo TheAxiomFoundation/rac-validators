@@ -2,7 +2,7 @@
 
 import pytest
 
-from cosilico_validators import (
+from rulespec_validators import (
     BaseValidator,
     ConsensusEngine,
     ConsensusLevel,

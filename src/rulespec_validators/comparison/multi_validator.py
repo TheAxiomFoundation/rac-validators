@@ -1,6 +1,6 @@
 """Multi-validator comparison framework.
 
-Compares Cosilico outputs against multiple external validators:
+Compares RuleSpec outputs against multiple external validators:
 - PolicyEngine (primary - same microdata)
 - TAXSIM (NBER reference calculator)
 - Tax-Calculator (PSL microsimulation)
@@ -17,10 +17,10 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from cosilico_validators.validators.base import TestCase
-from cosilico_validators.validators.policyengine import PolicyEngineValidator
-from cosilico_validators.validators.taxcalc import TaxCalculatorValidator
-from cosilico_validators.validators.taxsim import TaxsimValidator
+from rulespec_validators.validators.base import TestCase
+from rulespec_validators.validators.policyengine import PolicyEngineValidator
+from rulespec_validators.validators.taxcalc import TaxCalculatorValidator
+from rulespec_validators.validators.taxsim import TaxsimValidator
 
 # TAXSIM executable download URLs (from policyengine-taxsim repo)
 # These are bundled in https://github.com/PolicyEngine/policyengine-taxsim
@@ -37,7 +37,7 @@ def get_taxsim_executable_path() -> Path:
     Downloads from the policyengine-taxsim repository which bundles
     the TAXSIM executables for all platforms.
     """
-    cache_dir = Path.home() / ".cache" / "cosilico-validators" / "taxsim"
+    cache_dir = Path.home() / ".cache" / "rulespec-validators" / "taxsim"
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     system = platform.system().lower()
@@ -70,7 +70,7 @@ class ValidatorComparison:
     """Comparison result for a single variable across multiple validators."""
 
     variable: str
-    cosilico_value: float
+    rulespec_value: float
     validator_results: dict[str, float | None]  # validator_name -> value
     differences: dict[str, float | None]  # validator_name -> difference
     match_flags: dict[str, bool]  # validator_name -> within tolerance
@@ -91,7 +91,7 @@ class MultiValidatorResult:
 
 def compare_single_case(
     test_case: TestCase,
-    cosilico_value: float,
+    rulespec_value: float,
     variable: str,
     year: int = 2023,
     tolerance: float = 1.0,
@@ -102,7 +102,7 @@ def compare_single_case(
 
     Args:
         test_case: Input test case
-        cosilico_value: Cosilico's calculated value
+        rulespec_value: RuleSpec's calculated value
         variable: Variable name (e.g., "eitc")
         year: Tax year
         tolerance: Match tolerance in dollars
@@ -138,7 +138,7 @@ def compare_single_case(
 
             if result.success and result.calculated_value is not None:
                 results[validator_name] = result.calculated_value
-                diff = cosilico_value - result.calculated_value
+                diff = rulespec_value - result.calculated_value
                 differences[validator_name] = diff
                 match_flags[validator_name] = abs(diff) <= tolerance
             else:
@@ -154,7 +154,7 @@ def compare_single_case(
 
     return ValidatorComparison(
         variable=variable,
-        cosilico_value=cosilico_value,
+        rulespec_value=rulespec_value,
         validator_results=results,
         differences=differences,
         match_flags=match_flags,
@@ -162,7 +162,7 @@ def compare_single_case(
 
 
 def compare_microdata(
-    cosilico_values: np.ndarray,
+    rulespec_values: np.ndarray,
     input_builder: Callable[[int], TestCase],
     variable: str,
     year: int = 2023,
@@ -172,10 +172,10 @@ def compare_microdata(
     taxsim_mode: str = "local",
     sample_size: Optional[int] = None,
 ) -> MultiValidatorResult:
-    """Compare Cosilico outputs against multiple validators on microdata.
+    """Compare RuleSpec outputs against multiple validators on microdata.
 
     Args:
-        cosilico_values: Array of Cosilico calculated values
+        rulespec_values: Array of RuleSpec calculated values
         input_builder: Function that takes index and returns TestCase
         variable: Variable name (e.g., "eitc")
         year: Tax year
@@ -191,7 +191,7 @@ def compare_microdata(
     if validators is None:
         validators = ["taxsim", "taxcalc"]  # Skip PE since we use its inputs
 
-    n = len(cosilico_values)
+    n = len(rulespec_values)
     if sample_size:
         n = min(n, sample_size)
 
@@ -244,7 +244,7 @@ def compare_microdata(
     # Compute match rates and errors
     match_rates = {}
     mean_errors = {}
-    weighted_totals = {"cosilico": float((cosilico_values[:n] * weights[:n]).sum())}
+    weighted_totals = {"rulespec": float((rulespec_values[:n] * weights[:n]).sum())}
 
     for name, values in validator_values.items():
         # Convert to array, handling None
@@ -258,12 +258,12 @@ def compare_microdata(
             weighted_totals[name] = 0.0
             continue
 
-        cos_valid = cosilico_values[:n][valid_mask]
+        rulespec_valid = rulespec_values[:n][valid_mask]
         val_valid = val_array[valid_mask]
         weights_valid = weights[:n][valid_mask]
 
         # Match rate
-        diffs = np.abs(cos_valid - val_valid)
+        diffs = np.abs(rulespec_valid - val_valid)
         match_rates[name] = float((diffs <= tolerance).sum() / len(diffs))
 
         # MAE
@@ -280,8 +280,8 @@ def compare_microdata(
         mean_errors=mean_errors,
         weighted_totals=weighted_totals,
         summary={
-            "cosilico_mean": float(cosilico_values[:n].mean()),
-            "cosilico_total": weighted_totals["cosilico"],
+            "rulespec_mean": float(rulespec_values[:n].mean()),
+            "rulespec_total": weighted_totals["rulespec"],
         },
     )
 
@@ -326,19 +326,19 @@ def run_comparison_demo(year: int = 2023):
         ),
     ]
 
-    # Pretend Cosilico values (would come from engine)
-    cosilico_eitc = [560.0, 5500.0, 0.0]
+    # Pretend RuleSpec values (would come from engine)
+    rulespec_eitc = [560.0, 5500.0, 0.0]
 
     print(f"\nComparing EITC for {len(test_cases)} test cases...")
     print("-" * 60)
 
     for i, tc in enumerate(test_cases):
         print(f"\n{tc.name}")
-        print(f"  Cosilico EITC: ${cosilico_eitc[i]:,.2f}")
+        print(f"  RuleSpec EITC: ${rulespec_eitc[i]:,.2f}")
 
         result = compare_single_case(
             test_case=tc,
-            cosilico_value=cosilico_eitc[i],
+            rulespec_value=rulespec_eitc[i],
             variable="eitc",
             year=year,
             taxsim_mode="local",  # Use local like policyengine-taxsim

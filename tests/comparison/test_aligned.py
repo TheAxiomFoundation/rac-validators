@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from cosilico_validators.comparison.aligned import (
+from rulespec_validators.comparison.aligned import (
     CommonDataset,
     ComparisonResult,
     _var_exists,
@@ -67,16 +67,16 @@ class TestComparisonResult:
             match_rate=0.95,
             mean_absolute_error=50.0,
             n_records=n,
-            cosilico_total=60e9,
+            rulespec_total=60e9,
             policyengine_total=62e9,
-            cosilico_values=np.ones(n) * 600,
+            rulespec_values=np.ones(n) * 600,
             policyengine_values=np.ones(n) * 620,
             error_percentiles={"p50": 10, "p95": 100, "p99": 500, "max": 1000},
         )
         assert result.variable == "eitc"
         assert result.match_rate == 0.95
         assert result.n_records == n
-        assert result.cosilico_total == 60e9
+        assert result.rulespec_total == 60e9
 
 
 class TestCommonDataset:
@@ -95,23 +95,23 @@ class TestCompareVariable:
         ds = _make_common_dataset(1000)
         pe_values = np.ones(ds.n_records) * 1000
 
-        def cos_func(dataset):
+        def rulespec_func(dataset):
             return np.ones(dataset.n_records) * 1000
 
-        result = compare_variable(ds, cos_func, pe_values, "eitc")
+        result = compare_variable(ds, rulespec_func, pe_values, "eitc")
         assert result.match_rate == 1.0
         assert result.mean_absolute_error == 0.0
 
     def test_partial_match(self):
         ds = _make_common_dataset(1000)
         pe_values = np.ones(ds.n_records) * 1000
-        cos_values = np.ones(ds.n_records) * 1000
-        cos_values[:500] = 2000
+        rulespec_values = np.ones(ds.n_records) * 1000
+        rulespec_values[:500] = 2000
 
-        def cos_func(dataset, v=cos_values):
+        def rulespec_func(dataset, v=rulespec_values):
             return v
 
-        result = compare_variable(ds, cos_func, pe_values, "eitc")
+        result = compare_variable(ds, rulespec_func, pe_values, "eitc")
         assert result.match_rate < 1.0
         assert result.mean_absolute_error > 0
 
@@ -120,10 +120,10 @@ class TestCompareVariable:
         pe_values = np.ones(ds.n_records) * 1000
         np.random.seed(42)
 
-        def cos_func(dataset):
+        def rulespec_func(dataset):
             return np.random.uniform(900, 1100, dataset.n_records)
 
-        result = compare_variable(ds, cos_func, pe_values, "eitc")
+        result = compare_variable(ds, rulespec_func, pe_values, "eitc")
         assert "p50" in result.error_percentiles
         assert "p90" in result.error_percentiles
         assert "p95" in result.error_percentiles
@@ -133,40 +133,40 @@ class TestCompareVariable:
     def test_result_totals(self):
         ds = _make_common_dataset(1000)
         pe_values = np.ones(ds.n_records) * 1000
-        cos_values = np.ones(ds.n_records) * 1000
+        rulespec_values = np.ones(ds.n_records) * 1000
 
-        def cos_func(dataset, v=cos_values):
+        def rulespec_func(dataset, v=rulespec_values):
             return v
 
-        result = compare_variable(ds, cos_func, pe_values, "eitc")
+        result = compare_variable(ds, rulespec_func, pe_values, "eitc")
         expected_total = np.sum(ds.weight * 1000)
-        assert result.cosilico_total == pytest.approx(expected_total)
+        assert result.rulespec_total == pytest.approx(expected_total)
         assert result.policyengine_total == pytest.approx(expected_total)
 
     def test_custom_tolerance(self):
         ds = _make_common_dataset(100)
         pe_values = np.ones(ds.n_records) * 1000
-        cos_values = np.ones(ds.n_records) * 1005
+        rulespec_values = np.ones(ds.n_records) * 1005
 
-        def cos_func(dataset, v=cos_values):
+        def rulespec_func(dataset, v=rulespec_values):
             return v
 
         # With tolerance=1, 5-dollar diff should not match
-        result_strict = compare_variable(ds, cos_func, pe_values, "eitc", tolerance=1.0)
+        result_strict = compare_variable(ds, rulespec_func, pe_values, "eitc", tolerance=1.0)
         assert result_strict.match_rate == 0.0
         # With tolerance=10, 5-dollar diff should match
-        result_loose = compare_variable(ds, cos_func, pe_values, "eitc", tolerance=10.0)
+        result_loose = compare_variable(ds, rulespec_func, pe_values, "eitc", tolerance=10.0)
         assert result_loose.match_rate == 1.0
 
     def test_result_has_values(self):
         ds = _make_common_dataset(100)
         pe_values = np.ones(ds.n_records) * 1000
 
-        def cos_func(dataset):
+        def rulespec_func(dataset):
             return np.ones(dataset.n_records) * 1000
 
-        result = compare_variable(ds, cos_func, pe_values, "eitc")
-        assert len(result.cosilico_values) == ds.n_records
+        result = compare_variable(ds, rulespec_func, pe_values, "eitc")
+        assert len(result.rulespec_values) == ds.n_records
         assert len(result.policyengine_values) == ds.n_records
 
 
@@ -184,7 +184,7 @@ class TestVarExists:
 
 class TestLoadCommonDataset:
     def test_requires_policyengine(self):
-        from cosilico_validators.comparison.aligned import HAS_POLICYENGINE, load_common_dataset
+        from rulespec_validators.comparison.aligned import HAS_POLICYENGINE, load_common_dataset
 
         if not HAS_POLICYENGINE:
             with pytest.raises(ImportError):
@@ -245,10 +245,10 @@ class TestLoadCommonDataset:
 
         with (
             patch.dict(sys.modules, {"policyengine_us": mock_pe}),
-            patch("cosilico_validators.comparison.aligned.HAS_POLICYENGINE", True),
-            patch("cosilico_validators.comparison.aligned.Microsimulation", mock_pe.Microsimulation),
+            patch("rulespec_validators.comparison.aligned.HAS_POLICYENGINE", True),
+            patch("rulespec_validators.comparison.aligned.Microsimulation", mock_pe.Microsimulation),
         ):
-            from cosilico_validators.comparison.aligned import load_common_dataset
+            from rulespec_validators.comparison.aligned import load_common_dataset
 
             ds = load_common_dataset(year=2024)
             assert ds.n_records == n_tax_units
@@ -263,11 +263,11 @@ class TestLoadCommonDataset:
 
 class TestRunAlignedComparison:
     def test_requires_policyengine(self):
-        from cosilico_validators.comparison.aligned import HAS_POLICYENGINE
+        from rulespec_validators.comparison.aligned import HAS_POLICYENGINE
 
         if not HAS_POLICYENGINE:
             # run_aligned_comparison calls load_common_dataset which needs PE
-            from cosilico_validators.comparison.aligned import run_aligned_comparison
+            from rulespec_validators.comparison.aligned import run_aligned_comparison
 
             with pytest.raises(ImportError):
                 run_aligned_comparison()
@@ -295,15 +295,15 @@ class TestRunAlignedComparison:
                 sys.modules,
                 {
                     "policyengine_us": mock_pe,
-                    "cosilico_runner": mock_runner,
+                    "rulespec_runner": mock_runner,
                     "pandas": MagicMock(),
                 },
             ),
-            patch("cosilico_validators.comparison.aligned.HAS_POLICYENGINE", True),
-            patch("cosilico_validators.comparison.aligned.Microsimulation", mock_pe.Microsimulation),
-            patch("cosilico_validators.comparison.aligned.load_common_dataset", return_value=mock_ds),
+            patch("rulespec_validators.comparison.aligned.HAS_POLICYENGINE", True),
+            patch("rulespec_validators.comparison.aligned.Microsimulation", mock_pe.Microsimulation),
+            patch("rulespec_validators.comparison.aligned.load_common_dataset", return_value=mock_ds),
         ):
-            from cosilico_validators.comparison.aligned import run_aligned_comparison
+            from rulespec_validators.comparison.aligned import run_aligned_comparison
 
             result = run_aligned_comparison(year=2024)
             assert "metadata" in result

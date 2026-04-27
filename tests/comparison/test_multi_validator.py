@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from cosilico_validators.comparison.multi_validator import (
+from rulespec_validators.comparison.multi_validator import (
     TAXSIM_DOWNLOAD_URLS,
     MultiValidatorResult,
     ValidatorComparison,
@@ -12,7 +12,7 @@ from cosilico_validators.comparison.multi_validator import (
     compare_single_case,
     get_taxsim_executable_path,
 )
-from cosilico_validators.validators.base import TestCase
+from rulespec_validators.validators.base import TestCase
 
 
 class TestTaxsimDownloadUrls:
@@ -26,13 +26,13 @@ class TestValidatorComparison:
     def test_creation(self):
         vc = ValidatorComparison(
             variable="eitc",
-            cosilico_value=500.0,
+            rulespec_value=500.0,
             validator_results={"PE": 510.0, "TAXSIM": 505.0},
             differences={"PE": -10.0, "TAXSIM": -5.0},
             match_flags={"PE": True, "TAXSIM": True},
         )
         assert vc.variable == "eitc"
-        assert vc.cosilico_value == 500.0
+        assert vc.rulespec_value == 500.0
         assert vc.validator_results["PE"] == 510.0
 
 
@@ -44,7 +44,7 @@ class TestMultiValidatorResult:
             validators_used=["PE", "TAXSIM"],
             match_rates={"PE": 0.95, "TAXSIM": 0.90},
             mean_errors={"PE": 5.0, "TAXSIM": 10.0},
-            weighted_totals={"cosilico": 60e9, "PE": 62e9},
+            weighted_totals={"rulespec": 60e9, "PE": 62e9},
         )
         assert mvr.variable == "eitc"
         assert mvr.n_records == 1000
@@ -59,9 +59,9 @@ class TestCompareSingleCase:
         )
 
         with (
-            patch("cosilico_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe,
-            patch("cosilico_validators.comparison.multi_validator.TaxsimValidator") as mock_ts,
-            patch("cosilico_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc,
+            patch("rulespec_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe,
+            patch("rulespec_validators.comparison.multi_validator.TaxsimValidator") as mock_ts,
+            patch("rulespec_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc,
         ):
             # Mock PE
             mock_pe_inst = MagicMock()
@@ -88,11 +88,11 @@ class TestCompareSingleCase:
             mock_tc_inst.validate.return_value = mock_tc_result
 
             with patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
             ):
                 result = compare_single_case(
                     test_case=test_case,
-                    cosilico_value=500.0,
+                    rulespec_value=500.0,
                     variable="eitc",
                     year=2023,
                     taxsim_mode="local",
@@ -107,18 +107,18 @@ class TestCompareSingleCase:
             expected={"eitc": 500},
         )
 
-        with patch("cosilico_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe:
+        with patch("rulespec_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe:
             mock_pe.side_effect = Exception("PE not installed")
 
-            with patch("cosilico_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
+            with patch("rulespec_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
                 mock_ts.side_effect = Exception("TAXSIM not available")
 
-                with patch("cosilico_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc:
+                with patch("rulespec_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc:
                     mock_tc.side_effect = Exception("TaxCalc not available")
 
                     result = compare_single_case(
                         test_case=test_case,
-                        cosilico_value=500.0,
+                        rulespec_value=500.0,
                         variable="eitc",
                         year=2023,
                     )
@@ -135,9 +135,9 @@ class TestCompareSingleCase:
         )
 
         with (
-            patch("cosilico_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe,
-            patch("cosilico_validators.comparison.multi_validator.TaxsimValidator") as mock_ts,
-            patch("cosilico_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc,
+            patch("rulespec_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe,
+            patch("rulespec_validators.comparison.multi_validator.TaxsimValidator") as mock_ts,
+            patch("rulespec_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc,
         ):
             for mock in [mock_pe, mock_ts, mock_tc]:
                 inst = MagicMock()
@@ -149,7 +149,7 @@ class TestCompareSingleCase:
 
             result = compare_single_case(
                 test_case=test_case,
-                cosilico_value=500.0,
+                rulespec_value=500.0,
                 variable="eitc",
                 year=2023,
                 taxsim_mode="web",
@@ -159,7 +159,7 @@ class TestCompareSingleCase:
 
 class TestCompareMicrodata:
     def test_compare_microdata_basic(self):
-        cosilico_values = np.array([500.0, 600.0, 0.0])
+        rulespec_values = np.array([500.0, 600.0, 0.0])
 
         def input_builder(i):
             return TestCase(
@@ -170,8 +170,8 @@ class TestCompareMicrodata:
 
         # Mock all validators to succeed
         with (
-            patch("cosilico_validators.comparison.multi_validator.TaxsimValidator") as mock_ts,
-            patch("cosilico_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc,
+            patch("rulespec_validators.comparison.multi_validator.TaxsimValidator") as mock_ts,
+            patch("rulespec_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc,
         ):
             # Setup TAXSIM mock
             mock_ts_inst = MagicMock()
@@ -190,10 +190,10 @@ class TestCompareMicrodata:
             mock_tc_inst.batch_validate.return_value = [mock_tc_result] * 3
 
             with patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
             ):
                 result = compare_microdata(
-                    cosilico_values=cosilico_values,
+                    rulespec_values=rulespec_values,
                     input_builder=input_builder,
                     variable="eitc",
                     year=2023,
@@ -206,12 +206,12 @@ class TestCompareMicrodata:
                 assert "taxcalc" in result.match_rates
 
     def test_compare_microdata_with_sample_size(self):
-        cosilico_values = np.array([500.0, 600.0, 700.0, 800.0])
+        rulespec_values = np.array([500.0, 600.0, 700.0, 800.0])
 
         def input_builder(i):
             return TestCase(name=f"case_{i}", inputs={}, expected={})
 
-        with patch("cosilico_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
+        with patch("rulespec_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
             mock_ts_inst = MagicMock()
             mock_ts.return_value = mock_ts_inst
             mock_ts_result = MagicMock()
@@ -220,10 +220,10 @@ class TestCompareMicrodata:
             mock_ts_inst.batch_validate.return_value = [mock_ts_result] * 2
 
             with patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
             ):
                 result = compare_microdata(
-                    cosilico_values=cosilico_values,
+                    rulespec_values=rulespec_values,
                     input_builder=input_builder,
                     variable="eitc",
                     year=2023,
@@ -234,12 +234,12 @@ class TestCompareMicrodata:
                 assert result.n_records == 2
 
     def test_compare_microdata_no_valid_results(self):
-        cosilico_values = np.array([500.0])
+        rulespec_values = np.array([500.0])
 
         def input_builder(i):
             return TestCase(name=f"case_{i}", inputs={}, expected={})
 
-        with patch("cosilico_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
+        with patch("rulespec_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
             mock_ts_inst = MagicMock()
             mock_ts.return_value = mock_ts_inst
             mock_ts_result = MagicMock()
@@ -248,10 +248,10 @@ class TestCompareMicrodata:
             mock_ts_inst.batch_validate.return_value = [mock_ts_result]
 
             with patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
             ):
                 result = compare_microdata(
-                    cosilico_values=cosilico_values,
+                    rulespec_values=rulespec_values,
                     input_builder=input_builder,
                     variable="eitc",
                     year=2023,
@@ -261,12 +261,12 @@ class TestCompareMicrodata:
                 assert result.match_rates["taxsim"] == 0.0
 
     def test_compare_microdata_web_mode(self):
-        cosilico_values = np.array([500.0])
+        rulespec_values = np.array([500.0])
 
         def input_builder(i):
             return TestCase(name=f"case_{i}", inputs={}, expected={})
 
-        with patch("cosilico_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
+        with patch("rulespec_validators.comparison.multi_validator.TaxsimValidator") as mock_ts:
             mock_ts_inst = MagicMock()
             mock_ts.return_value = mock_ts_inst
             mock_ts_result = MagicMock()
@@ -275,7 +275,7 @@ class TestCompareMicrodata:
             mock_ts_inst.batch_validate.return_value = [mock_ts_result]
 
             result = compare_microdata(
-                cosilico_values=cosilico_values,
+                rulespec_values=rulespec_values,
                 input_builder=input_builder,
                 variable="eitc",
                 year=2023,
@@ -285,12 +285,12 @@ class TestCompareMicrodata:
             assert result.match_rates["taxsim"] == 1.0
 
     def test_compare_microdata_with_pe(self):
-        cosilico_values = np.array([500.0])
+        rulespec_values = np.array([500.0])
 
         def input_builder(i):
             return TestCase(name=f"case_{i}", inputs={}, expected={})
 
-        with patch("cosilico_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe:
+        with patch("rulespec_validators.comparison.multi_validator.PolicyEngineValidator") as mock_pe:
             mock_pe_inst = MagicMock()
             mock_pe.return_value = mock_pe_inst
             mock_pe_result = MagicMock()
@@ -299,7 +299,7 @@ class TestCompareMicrodata:
             mock_pe_inst.batch_validate.return_value = [mock_pe_result]
 
             result = compare_microdata(
-                cosilico_values=cosilico_values,
+                rulespec_values=rulespec_values,
                 input_builder=input_builder,
                 variable="eitc",
                 year=2023,
@@ -308,21 +308,21 @@ class TestCompareMicrodata:
             assert "policyengine" in result.match_rates
 
     def test_compare_microdata_init_failure(self):
-        cosilico_values = np.array([500.0])
+        rulespec_values = np.array([500.0])
 
         def input_builder(i):
             return TestCase(name=f"case_{i}", inputs={}, expected={})
 
         with (
             patch(
-                "cosilico_validators.comparison.multi_validator.TaxsimValidator", side_effect=Exception("init failed")
+                "rulespec_validators.comparison.multi_validator.TaxsimValidator", side_effect=Exception("init failed")
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path", return_value="/tmp/taxsim"
             ),
         ):
             result = compare_microdata(
-                cosilico_values=cosilico_values,
+                rulespec_values=rulespec_values,
                 input_builder=input_builder,
                 variable="eitc",
                 year=2023,
@@ -334,12 +334,12 @@ class TestCompareMicrodata:
 
     def test_compare_microdata_without_batch(self):
         """Test fallback to single validation when batch_validate not available."""
-        cosilico_values = np.array([500.0])
+        rulespec_values = np.array([500.0])
 
         def input_builder(i):
             return TestCase(name=f"case_{i}", inputs={}, expected={})
 
-        with patch("cosilico_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc:
+        with patch("rulespec_validators.comparison.multi_validator.TaxCalculatorValidator") as mock_tc:
             mock_tc_inst = MagicMock(spec=[])  # No batch_validate
             mock_tc_inst.validate = MagicMock()
             mock_tc.return_value = mock_tc_inst
@@ -351,7 +351,7 @@ class TestCompareMicrodata:
             del mock_tc_inst.batch_validate
 
             result = compare_microdata(
-                cosilico_values=cosilico_values,
+                rulespec_values=rulespec_values,
                 input_builder=input_builder,
                 variable="eitc",
                 year=2023,
@@ -362,15 +362,15 @@ class TestCompareMicrodata:
 
 class TestRunComparisonDemo:
     def test_demo_runs(self):
-        with patch("cosilico_validators.comparison.multi_validator.compare_single_case") as mock_compare:
+        with patch("rulespec_validators.comparison.multi_validator.compare_single_case") as mock_compare:
             mock_compare.return_value = ValidatorComparison(
                 variable="eitc",
-                cosilico_value=560.0,
+                rulespec_value=560.0,
                 validator_results={"policyengine": 570.0, "taxsim": None},
                 differences={"policyengine": -10.0, "taxsim": None},
                 match_flags={"policyengine": True, "taxsim": False},
             )
-            from cosilico_validators.comparison.multi_validator import run_comparison_demo
+            from rulespec_validators.comparison.multi_validator import run_comparison_demo
 
             run_comparison_demo(year=2023)
 
@@ -378,37 +378,37 @@ class TestRunComparisonDemo:
 class TestGetTaxsimExecutablePath:
     def test_path_creation(self, tmp_path):
         with (
-            patch("cosilico_validators.comparison.multi_validator.Path.home", return_value=tmp_path),
-            patch("cosilico_validators.comparison.multi_validator.urllib.request.urlretrieve"),
-            patch("cosilico_validators.comparison.multi_validator.os.chmod"),
+            patch("rulespec_validators.comparison.multi_validator.Path.home", return_value=tmp_path),
+            patch("rulespec_validators.comparison.multi_validator.urllib.request.urlretrieve"),
+            patch("rulespec_validators.comparison.multi_validator.os.chmod"),
         ):
             path = get_taxsim_executable_path()
             assert isinstance(path, type(tmp_path / "test"))
 
     def test_existing_executable(self, tmp_path):
-        cache_dir = tmp_path / ".cache" / "cosilico-validators" / "taxsim"
+        cache_dir = tmp_path / ".cache" / "rulespec-validators" / "taxsim"
         cache_dir.mkdir(parents=True)
         (cache_dir / "taxsimtest-osx.exe").write_text("fake")
-        with patch("cosilico_validators.comparison.multi_validator.Path.home", return_value=tmp_path):
+        with patch("rulespec_validators.comparison.multi_validator.Path.home", return_value=tmp_path):
             path = get_taxsim_executable_path()
             assert path.exists()
 
     def test_linux_platform(self, tmp_path):
         with (
-            patch("cosilico_validators.comparison.multi_validator.Path.home", return_value=tmp_path),
-            patch("cosilico_validators.comparison.multi_validator.platform.system", return_value="Linux"),
-            patch("cosilico_validators.comparison.multi_validator.urllib.request.urlretrieve"),
-            patch("cosilico_validators.comparison.multi_validator.os.chmod"),
+            patch("rulespec_validators.comparison.multi_validator.Path.home", return_value=tmp_path),
+            patch("rulespec_validators.comparison.multi_validator.platform.system", return_value="Linux"),
+            patch("rulespec_validators.comparison.multi_validator.urllib.request.urlretrieve"),
+            patch("rulespec_validators.comparison.multi_validator.os.chmod"),
         ):
             path = get_taxsim_executable_path()
             assert "linux" in str(path)
 
     def test_windows_platform(self, tmp_path):
         with (
-            patch("cosilico_validators.comparison.multi_validator.Path.home", return_value=tmp_path),
-            patch("cosilico_validators.comparison.multi_validator.platform.system", return_value="Windows"),
-            patch("cosilico_validators.comparison.multi_validator.urllib.request.urlretrieve"),
-            patch("cosilico_validators.comparison.multi_validator.os.chmod"),
+            patch("rulespec_validators.comparison.multi_validator.Path.home", return_value=tmp_path),
+            patch("rulespec_validators.comparison.multi_validator.platform.system", return_value="Windows"),
+            patch("rulespec_validators.comparison.multi_validator.urllib.request.urlretrieve"),
+            patch("rulespec_validators.comparison.multi_validator.os.chmod"),
         ):
             path = get_taxsim_executable_path()
             assert "windows" in str(path)
@@ -424,7 +424,7 @@ class TestCompareSingleCaseUnknownValidator:
         )
         result = compare_single_case(
             test_case=test_case,
-            cosilico_value=500.0,
+            rulespec_value=500.0,
             variable="eitc",
             year=2023,
             validators=["unknown_validator"],

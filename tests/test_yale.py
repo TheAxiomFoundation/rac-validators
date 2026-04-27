@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
-from cosilico_validators import TestCase, ValidatorType
-from cosilico_validators.validators.yale import (
+from rulespec_validators import TestCase, ValidatorType
+from rulespec_validators.validators.yale import (
     SUPPORTED_VARIABLES,
     VARIABLE_MAPPING,
     YaleTaxValidator,

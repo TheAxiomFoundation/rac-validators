@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cosilico_validators.validators.base import TestCase, ValidatorType
-from cosilico_validators.validators.policyengine import (
+from rulespec_validators.validators.base import TestCase, ValidatorType
+from rulespec_validators.validators.policyengine import (
     PolicyEngineValidator,
 )
 

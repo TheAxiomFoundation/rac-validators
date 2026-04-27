@@ -15,15 +15,15 @@ except ImportError:
 
 
 def compare_records(
-    cosilico_values: np.ndarray,
+    rulespec_values: np.ndarray,
     pe_values: np.ndarray,
     tolerance: float = 1.0,
     top_n_mismatches: int = 10,
 ) -> dict:
-    """Compare Cosilico vs PolicyEngine values record-by-record.
+    """Compare RuleSpec vs PolicyEngine values record-by-record.
 
     Args:
-        cosilico_values: Array of Cosilico-computed values
+        rulespec_values: Array of RuleSpec-computed values
         pe_values: Array of PolicyEngine values
         tolerance: Maximum difference to consider a match (in dollars)
         top_n_mismatches: Number of worst mismatches to return
@@ -31,10 +31,10 @@ def compare_records(
     Returns:
         Dict with match_rate, MAE, error distribution, worst mismatches
     """
-    assert len(cosilico_values) == len(pe_values), "Arrays must have same length"
+    assert len(rulespec_values) == len(pe_values), "Arrays must have same length"
 
-    n_records = len(cosilico_values)
-    abs_errors = np.abs(cosilico_values - pe_values)
+    n_records = len(rulespec_values)
+    abs_errors = np.abs(rulespec_values - pe_values)
 
     # Match rate
     matches = abs_errors <= tolerance
@@ -63,7 +63,7 @@ def compare_records(
             worst_mismatches.append(
                 {
                     "index": int(idx),
-                    "cosilico": float(cosilico_values[idx]),
+                    "rulespec": float(rulespec_values[idx]),
                     "policyengine": float(pe_values[idx]),
                     "difference": float(abs_errors[idx]),
                 }
@@ -104,10 +104,10 @@ def load_pe_values(variable: str, year: int = 2024, return_ids: bool = False):
     return values
 
 
-def load_cosilico_values(variable: str, year: int = 2024, return_ids: bool = False):
-    """Load Cosilico-computed values for a variable across CPS.
+def load_rulespec_values(variable: str, year: int = 2024, return_ids: bool = False):
+    """Load RuleSpec-computed values for a variable across CPS.
 
-    Uses the cosilico-data-sources runner infrastructure to compute values
+    Uses the rules-us runner infrastructure to compute values
     using the same tax unit construction as PolicyEngine comparison.
 
     Args:
@@ -119,42 +119,42 @@ def load_cosilico_values(variable: str, year: int = 2024, return_ids: bool = Fal
         Array of values for each tax unit, or (values, ids) tuple
 
     Raises:
-        ImportError: If cosilico-data-sources not available
+        ImportError: If rules-us not available
     """
     import sys
     from pathlib import Path
 
-    # Add cosilico-data-sources to path
-    data_sources_path = Path.home() / "CosilicoAI" / "cosilico-data-sources" / "micro" / "us"
+    # Add rules-us to path
+    data_sources_path = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
     if not data_sources_path.exists():
         raise ImportError(
-            f"cosilico-data-sources not found at {data_sources_path}. "
-            "Clone the repo to ~/CosilicoAI/cosilico-data-sources"
+            f"rules-us not found at {data_sources_path}. "
+            "Clone the repo to ~/TheAxiomFoundation/rules-us"
         )
     sys.path.insert(0, str(data_sources_path))
 
-    from cosilico_runner import run_all_calculations
+    from rulespec_runner import run_all_calculations
     from tax_unit_builder import load_and_build_tax_units
 
     # Load and compute
     df = load_and_build_tax_units(year)
     df = run_all_calculations(df, year)
 
-    # Map variable names to cosilico column names
+    # Map variable names to rulespec column names
     column_map = {
-        "eitc": "cos_eitc",
-        "ctc": "cos_ctc_total",
-        "non_refundable_ctc": "cos_ctc_nonref",
-        "refundable_ctc": "cos_ctc_ref",
-        "income_tax": "cos_income_tax",
-        "income_tax_before_credits": "cos_income_tax",
-        "self_employment_tax": "cos_se_tax",
-        "net_investment_income_tax": "cos_niit",
+        "eitc": "rulespec_eitc",
+        "ctc": "rulespec_ctc_total",
+        "non_refundable_ctc": "rulespec_ctc_nonref",
+        "refundable_ctc": "rulespec_ctc_ref",
+        "income_tax": "rulespec_income_tax",
+        "income_tax_before_credits": "rulespec_income_tax",
+        "self_employment_tax": "rulespec_se_tax",
+        "net_investment_income_tax": "rulespec_niit",
         "adjusted_gross_income": "adjusted_gross_income",
         "taxable_income": "taxable_income",
     }
 
-    col = column_map.get(variable, f"cos_{variable}")
+    col = column_map.get(variable, f"rulespec_{variable}")
     if col not in df.columns:
         raise ValueError(f"Variable '{variable}' not found. Available: {list(column_map.keys())}")
 
@@ -166,37 +166,37 @@ def load_cosilico_values(variable: str, year: int = 2024, return_ids: bool = Fal
     return values
 
 
-def align_records(cos_values: np.ndarray, cos_ids: np.ndarray, pe_values: np.ndarray, pe_ids: np.ndarray):
+def align_records(rulespec_values: np.ndarray, rulespec_ids: np.ndarray, pe_values: np.ndarray, pe_ids: np.ndarray):
     """Align records by tax_unit_id for comparison.
 
     Uses vectorized merge via sorted index lookup for performance.
 
     Args:
-        cos_values: Cosilico computed values
-        cos_ids: Cosilico tax unit IDs
+        rulespec_values: RuleSpec computed values
+        rulespec_ids: RuleSpec tax unit IDs
         pe_values: PolicyEngine computed values
         pe_ids: PolicyEngine tax unit IDs
 
     Returns:
-        Tuple of (aligned_cos_values, aligned_pe_values, matched_ids)
+        Tuple of (aligned_rulespec_values, aligned_pe_values, matched_ids)
     """
     # Find common IDs using set intersection
-    cos_id_set = set(cos_ids)
+    rulespec_id_set = set(rulespec_ids)
     pe_id_set = set(pe_ids)
-    common_ids = np.array(sorted(cos_id_set & pe_id_set))
+    common_ids = np.array(sorted(rulespec_id_set & pe_id_set))
 
     if len(common_ids) == 0:
-        raise ValueError("No matching tax unit IDs between Cosilico and PolicyEngine")
+        raise ValueError("No matching tax unit IDs between RuleSpec and PolicyEngine")
 
     # Create lookup dictionaries (O(n) construction, O(1) lookup)
-    cos_lookup = dict(zip(cos_ids, cos_values))
+    rulespec_lookup = dict(zip(rulespec_ids, rulespec_values))
     pe_lookup = dict(zip(pe_ids, pe_values))
 
     # Vectorized value extraction
-    aligned_cos = np.array([cos_lookup[id_] for id_ in common_ids])
+    aligned_rulespec = np.array([rulespec_lookup[id_] for id_ in common_ids])
     aligned_pe = np.array([pe_lookup[id_] for id_ in common_ids])
 
-    return aligned_cos, aligned_pe, common_ids
+    return aligned_rulespec, aligned_pe, common_ids
 
 
 def run_variable_comparison(
@@ -218,15 +218,15 @@ def run_variable_comparison(
     """
     # Load with IDs for alignment
     pe_values, pe_ids = load_pe_values(variable, year, return_ids=True)
-    cos_values, cos_ids = load_cosilico_values(variable, year, return_ids=True)
+    rulespec_values, rulespec_ids = load_rulespec_values(variable, year, return_ids=True)
 
     # Align records
-    aligned_cos, aligned_pe, matched_ids = align_records(cos_values, cos_ids, pe_values, pe_ids)
+    aligned_rulespec, aligned_pe, matched_ids = align_records(rulespec_values, rulespec_ids, pe_values, pe_ids)
 
-    result = compare_records(aligned_cos, aligned_pe, tolerance=tolerance)
+    result = compare_records(aligned_rulespec, aligned_pe, tolerance=tolerance)
     result["variable"] = variable
     result["year"] = year
-    result["total_cosilico_records"] = len(cos_values)
+    result["total_rulespec_records"] = len(rulespec_values)
     result["total_pe_records"] = len(pe_values)
     result["matched_records"] = len(matched_ids)
 
@@ -296,7 +296,7 @@ def generate_dashboard_json(results: list[dict], year: int = 2024) -> dict:
             "generated_at": datetime.now().isoformat(),
             "tax_year": year,
             "data_source": "CPS ASEC (Enhanced)",
-            "comparison": "Cosilico vs PolicyEngine-US",
+            "comparison": "RuleSpec vs PolicyEngine-US",
         },
         "summary": {
             "overall_match_rate": overall_match_rate,

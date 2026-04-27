@@ -14,7 +14,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from cosilico_validators.validators.base import (
+from rulespec_validators.validators.base import (
     BaseValidator,
     TestCase,
     ValidatorResult,
@@ -102,7 +102,7 @@ class YaleTaxValidator(BaseValidator):
             Path.home() / "Tax-Simulator",
             Path.home() / "repos" / "Tax-Simulator",
             Path.home() / "github" / "Budget-Lab-Yale" / "Tax-Simulator",
-            Path.home() / ".cosilico" / "Tax-Simulator",
+            Path.home() / ".rulespec" / "Tax-Simulator",
             Path.cwd() / "Tax-Simulator",
             Path.cwd().parent / "Tax-Simulator",
         ]
@@ -243,7 +243,7 @@ class YaleTaxValidator(BaseValidator):
             str(self.tax_simulator_path / "src" / "main.R"),
             str(runscript),  # runscript
             "1",  # scenario_id
-            "cosilico",  # user_id
+            "rulespec",  # user_id
             "1",  # local mode
             str(year),  # vintage/year
             "100",  # pct_sample (100% for single unit)

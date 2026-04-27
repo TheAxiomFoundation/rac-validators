@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from cosilico_validators.comparison.taxsim_comparison import (
+from rulespec_validators.comparison.taxsim_comparison import (
     ComparisonResult,
     PolicyEngineResult,
     TaxCase,
@@ -542,7 +542,7 @@ class TestRunComparisons:
 
         with (
             patch(
-                "cosilico_validators.comparison.taxsim_comparison.query_taxsim",
+                "rulespec_validators.comparison.taxsim_comparison.query_taxsim",
                 return_value=ts_results,
             ),
             patch.dict(sys.modules, {"policyengine_us": mock_pe}),
@@ -564,7 +564,7 @@ class TestRunComparisons:
 
         with (
             patch(
-                "cosilico_validators.comparison.taxsim_comparison.query_taxsim",
+                "rulespec_validators.comparison.taxsim_comparison.query_taxsim",
                 return_value=[],  # No TAXSIM results
             ),
             patch.dict(sys.modules, {"policyengine_us": mock_pe}),
@@ -715,7 +715,7 @@ class TestMainFunction:
 
         with (
             patch(
-                "cosilico_validators.comparison.taxsim_comparison.query_taxsim",
+                "rulespec_validators.comparison.taxsim_comparison.query_taxsim",
                 return_value=ts_results,
             ),
             patch.dict(sys.modules, {"policyengine_us": mock_pe}),
@@ -735,7 +735,7 @@ class TestMainFunction:
 
         with (
             patch(
-                "cosilico_validators.comparison.taxsim_comparison.query_taxsim",
+                "rulespec_validators.comparison.taxsim_comparison.query_taxsim",
                 return_value=[],
             ),
             patch.dict(sys.modules, {"policyengine_us": mock_pe}),

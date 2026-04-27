@@ -3,7 +3,7 @@
 # The `statute` field references rules-us statute definitions.
 # Format: {title}/{section}.yaml::{variable_name}
 #
-# The variable name after :: is the output column name in Cosilico.
+# The variable name after :: is the output column name in RuleSpec.
 
 variables:
   eitc:

@@ -1,1 +1,1 @@
-"""Tests for cosilico-validators."""
+"""Tests for rulespec-validators."""

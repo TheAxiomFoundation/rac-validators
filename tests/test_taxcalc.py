@@ -2,8 +2,8 @@
 
 import pytest
 
-from cosilico_validators.validators.base import TestCase, ValidatorType
-from cosilico_validators.validators.taxcalc import (
+from rulespec_validators.validators.base import TestCase, ValidatorType
+from rulespec_validators.validators.taxcalc import (
     MARS_MAPPING,
     SUPPORTED_VARIABLES,
     VARIABLE_MAPPING,

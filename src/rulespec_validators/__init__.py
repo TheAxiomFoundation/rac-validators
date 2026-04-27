@@ -1,8 +1,8 @@
-"""Cosilico Validators - Multi-system tax/benefit validation."""
+"""RuleSpec Validators - Multi-system tax/benefit validation."""
 
-from cosilico_validators.consensus import ConsensusEngine, ValidationResult
-from cosilico_validators.consensus.engine import ConsensusLevel
-from cosilico_validators.validators.base import (
+from rulespec_validators.consensus import ConsensusEngine, ValidationResult
+from rulespec_validators.consensus.engine import ConsensusLevel
+from rulespec_validators.validators.base import (
     BaseValidator,
     TestCase,
     ValidatorResult,

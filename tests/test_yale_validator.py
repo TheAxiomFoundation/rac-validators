@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cosilico_validators.validators.base import TestCase
-from cosilico_validators.validators.yale import (
+from rulespec_validators.validators.base import TestCase
+from rulespec_validators.validators.yale import (
     FILING_STATUS_MAP,
     YaleTaxValidator,
 )

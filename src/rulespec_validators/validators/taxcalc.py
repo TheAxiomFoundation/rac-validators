@@ -11,7 +11,7 @@ from typing import Any
 
 import pandas as pd
 
-from cosilico_validators.validators.base import (
+from rulespec_validators.validators.base import (
     BaseValidator,
     TestCase,
     ValidatorResult,
@@ -98,7 +98,7 @@ class TaxCalculatorValidator(BaseValidator):
 
                 self._tc_module = tc
             except ImportError as e:
-                raise ImportError("taxcalc not installed. Install with: pip install cosilico-validators[psl]") from e
+                raise ImportError("taxcalc not installed. Install with: pip install rulespec-validators[psl]") from e
         return self._tc_module
 
     def supports_variable(self, variable: str) -> bool:

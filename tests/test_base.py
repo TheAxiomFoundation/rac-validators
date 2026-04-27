@@ -1,6 +1,6 @@
 """Tests for base validator types."""
 
-from cosilico_validators import TestCase, ValidatorResult, ValidatorType
+from rulespec_validators import TestCase, ValidatorResult, ValidatorType
 
 
 class TestTestCase:
@@ -73,7 +73,7 @@ class TestValidatorType:
 
 class TestBaseValidator:
     def test_batch_validate_default(self):
-        from cosilico_validators.validators.base import BaseValidator
+        from rulespec_validators.validators.base import BaseValidator
 
         class ConcreteValidator(BaseValidator):
             name = "Test"

@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from cosilico_validators.cli import cli, display_results, display_summary
-from cosilico_validators.consensus.engine import ConsensusLevel
-from cosilico_validators.validators.base import TestCase, ValidatorType
+from rulespec_validators.cli import cli, display_results, display_summary
+from rulespec_validators.consensus.engine import ConsensusLevel
+from rulespec_validators.validators.base import TestCase, ValidatorType
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def _make_mock_validation_result():
 
 def _make_harness_result(with_alignment=False, with_issues=False, with_review=False):
     """Create a real HarnessResult for CLI testing."""
-    from cosilico_validators.harness import (
+    from rulespec_validators.harness import (
         AlignmentResult,
         CoverageResult,
         HarnessResult,
@@ -172,30 +172,30 @@ def _make_harness_result(with_alignment=False, with_issues=False, with_review=Fa
 
 class TestLoadValidators:
     def test_load_both(self):
-        from cosilico_validators.cli import load_validators
+        from rulespec_validators.cli import load_validators
 
         with (
-            patch("cosilico_validators.cli.TaxsimValidator", create=True),
-            patch("cosilico_validators.cli.PolicyEngineValidator", create=True),
-            patch("cosilico_validators.validators.taxsim.TaxsimValidator"),
-            patch("cosilico_validators.validators.policyengine.PolicyEngineValidator"),
+            patch("rulespec_validators.cli.TaxsimValidator", create=True),
+            patch("rulespec_validators.cli.PolicyEngineValidator", create=True),
+            patch("rulespec_validators.validators.taxsim.TaxsimValidator"),
+            patch("rulespec_validators.validators.policyengine.PolicyEngineValidator"),
         ):
             # The function does lazy imports, so we patch the import mechanism
             validators = load_validators(include_policyengine=True, include_taxsim=True)
             assert isinstance(validators, list)
 
     def test_load_taxsim_only(self):
-        from cosilico_validators.cli import load_validators
+        from rulespec_validators.cli import load_validators
 
-        with patch("cosilico_validators.validators.taxsim.TaxsimValidator"):
+        with patch("rulespec_validators.validators.taxsim.TaxsimValidator"):
             validators = load_validators(include_policyengine=False, include_taxsim=True)
             assert isinstance(validators, list)
             assert len(validators) >= 1
 
     def test_load_policyengine_import_error(self):
-        from cosilico_validators.cli import load_validators
+        from rulespec_validators.cli import load_validators
 
-        with patch("cosilico_validators.validators.taxsim.TaxsimValidator"):
+        with patch("rulespec_validators.validators.taxsim.TaxsimValidator"):
             # Simulate PE import failure
             import builtins
 
@@ -211,7 +211,7 @@ class TestLoadValidators:
                 assert isinstance(validators, list)
 
     def test_load_neither(self):
-        from cosilico_validators.cli import load_validators
+        from rulespec_validators.cli import load_validators
 
         validators = load_validators(include_policyengine=False, include_taxsim=False)
         assert validators == []
@@ -232,8 +232,8 @@ class TestValidateCommand:
     def test_validate_json(self, runner, sample_test_file):
         mock_result = self._setup_mocks()
         with (
-            patch("cosilico_validators.cli.load_validators") as mock_lv,
-            patch("cosilico_validators.cli.ConsensusEngine") as mock_ce,
+            patch("rulespec_validators.cli.load_validators") as mock_lv,
+            patch("rulespec_validators.cli.ConsensusEngine") as mock_ce,
         ):
             mock_lv.return_value = [MagicMock()]
             mock_engine = MagicMock()
@@ -254,8 +254,8 @@ class TestValidateCommand:
     def test_validate_yaml(self, runner, sample_yaml_test_file):
         mock_result = self._setup_mocks()
         with (
-            patch("cosilico_validators.cli.load_validators") as mock_lv,
-            patch("cosilico_validators.cli.ConsensusEngine") as mock_ce,
+            patch("rulespec_validators.cli.load_validators") as mock_lv,
+            patch("rulespec_validators.cli.ConsensusEngine") as mock_ce,
         ):
             mock_lv.return_value = [MagicMock()]
             mock_engine = MagicMock()
@@ -276,8 +276,8 @@ class TestValidateCommand:
     def test_validate_dict_format(self, runner, sample_dict_test_file):
         mock_result = self._setup_mocks()
         with (
-            patch("cosilico_validators.cli.load_validators") as mock_lv,
-            patch("cosilico_validators.cli.ConsensusEngine") as mock_ce,
+            patch("rulespec_validators.cli.load_validators") as mock_lv,
+            patch("rulespec_validators.cli.ConsensusEngine") as mock_ce,
         ):
             mock_lv.return_value = [MagicMock()]
             mock_engine = MagicMock()
@@ -308,7 +308,7 @@ class TestValidateCommand:
         assert result.exit_code != 0
 
     def test_validate_no_validators(self, runner, sample_test_file):
-        with patch("cosilico_validators.cli.load_validators") as mock_lv:
+        with patch("rulespec_validators.cli.load_validators") as mock_lv:
             mock_lv.return_value = []
             result = runner.invoke(
                 cli,
@@ -327,8 +327,8 @@ class TestValidateCommand:
         mock_result = self._setup_mocks()
         output_path = str(tmp_path / "output.json")
         with (
-            patch("cosilico_validators.cli.load_validators") as mock_lv,
-            patch("cosilico_validators.cli.ConsensusEngine") as mock_ce,
+            patch("rulespec_validators.cli.load_validators") as mock_lv,
+            patch("rulespec_validators.cli.ConsensusEngine") as mock_ce,
         ):
             mock_lv.return_value = [MagicMock()]
             mock_engine = MagicMock()
@@ -377,7 +377,7 @@ class TestDisplaySummary:
 
 class TestValidatorsCommand:
     def test_list_validators(self, runner):
-        with patch("cosilico_validators.cli.load_validators") as mock_lv:
+        with patch("rulespec_validators.cli.load_validators") as mock_lv:
             mock_v = MagicMock()
             mock_v.name = "TestValidator"
             mock_v.validator_type = ValidatorType.REFERENCE
@@ -388,7 +388,7 @@ class TestValidatorsCommand:
             assert result.exit_code == 0
 
     def test_list_validators_with_variable_filter(self, runner):
-        with patch("cosilico_validators.cli.load_validators") as mock_lv:
+        with patch("rulespec_validators.cli.load_validators") as mock_lv:
             mock_v = MagicMock()
             mock_v.name = "TestValidator"
             mock_v.validator_type = ValidatorType.REFERENCE
@@ -399,7 +399,7 @@ class TestValidatorsCommand:
             assert result.exit_code == 0
 
     def test_list_validators_with_many_variables(self, runner):
-        with patch("cosilico_validators.cli.load_validators") as mock_lv:
+        with patch("rulespec_validators.cli.load_validators") as mock_lv:
             mock_v = MagicMock()
             mock_v.name = "TestValidator"
             mock_v.validator_type = ValidatorType.REFERENCE
@@ -436,7 +436,7 @@ class TestFileIssuesCommand:
 
 class TestCompareAlignedCommand:
     def test_compare_aligned_import_error(self, runner):
-        with patch("cosilico_validators.comparison.run_aligned_comparison", side_effect=ImportError("no PE")):
+        with patch("rulespec_validators.comparison.run_aligned_comparison", side_effect=ImportError("no PE")):
             result = runner.invoke(cli, ["compare-aligned"])
             assert result.exit_code != 0
 
@@ -446,7 +446,7 @@ class TestCompareAlignedCommand:
             "summary": {"overall_match_rate": 0, "total_records": 0},
         }
         output_path = str(tmp_path / "output.json")
-        with patch("cosilico_validators.comparison.run_aligned_comparison", return_value=mock_dashboard):
+        with patch("rulespec_validators.comparison.run_aligned_comparison", return_value=mock_dashboard):
             result = runner.invoke(cli, ["compare-aligned", "-o", output_path])
             assert result.exit_code == 0
             assert Path(output_path).exists()
@@ -459,7 +459,7 @@ class TestCompareAlignedCommand:
                     "variable": "eitc",
                     "match_rate": 0.95,
                     "mean_absolute_error": 50,
-                    "cosilico_weighted_total": 60e9,
+                    "rulespec_weighted_total": 60e9,
                     "policyengine_weighted_total": 62e9,
                     "difference_billions": -2.0,
                 },
@@ -467,14 +467,14 @@ class TestCompareAlignedCommand:
                     "variable": "income_tax",
                     "match_rate": 0.50,
                     "mean_absolute_error": 500,
-                    "cosilico_weighted_total": 1000e9,
+                    "rulespec_weighted_total": 1000e9,
                     "policyengine_weighted_total": 900e9,
                     "difference_billions": 100.0,
                 },
             ],
             "summary": {"overall_match_rate": 0.72, "total_records": 100000},
         }
-        with patch("cosilico_validators.comparison.run_aligned_comparison", return_value=mock_dashboard):
+        with patch("rulespec_validators.comparison.run_aligned_comparison", return_value=mock_dashboard):
             result = runner.invoke(cli, ["compare-aligned"])
             assert result.exit_code == 0
 
@@ -485,7 +485,7 @@ class TestCompareCommand:
             "variables": [{"variable": "eitc", "match_rate": 0.95, "mean_absolute_error": 50, "n_records": 100000}],
             "summary": {"overall_match_rate": 0.95, "total_records": 100000},
         }
-        with patch("cosilico_validators.comparison.run_full_comparison", return_value=mock_dashboard):
+        with patch("rulespec_validators.comparison.run_full_comparison", return_value=mock_dashboard):
             result = runner.invoke(cli, ["compare"])
             assert result.exit_code == 0
 
@@ -494,12 +494,12 @@ class TestCompareCommand:
             "variables": [{"variable": "eitc", "error": "failed"}],
             "summary": {"overall_match_rate": 0, "total_records": 0},
         }
-        with patch("cosilico_validators.comparison.run_full_comparison", return_value=mock_dashboard):
+        with patch("rulespec_validators.comparison.run_full_comparison", return_value=mock_dashboard):
             result = runner.invoke(cli, ["compare"])
             assert result.exit_code == 0
 
     def test_compare_import_error(self, runner):
-        with patch("cosilico_validators.comparison.run_full_comparison", side_effect=ImportError("no PE")):
+        with patch("rulespec_validators.comparison.run_full_comparison", side_effect=ImportError("no PE")):
             result = runner.invoke(cli, ["compare"])
             assert result.exit_code != 0
 
@@ -509,7 +509,7 @@ class TestCompareCommand:
             "summary": {"overall_match_rate": 0, "total_records": 0},
         }
         output_path = str(tmp_path / "output.json")
-        with patch("cosilico_validators.comparison.run_full_comparison", return_value=mock_dashboard):
+        with patch("rulespec_validators.comparison.run_full_comparison", return_value=mock_dashboard):
             result = runner.invoke(cli, ["compare", "-o", output_path])
             assert result.exit_code == 0
             assert Path(output_path).exists()
@@ -531,12 +531,12 @@ class TestDashboardCommand:
                 "meanAbsoluteError": 50,
             },
         }
-        with patch("cosilico_validators.dashboard_export.run_export", return_value=mock_data):
+        with patch("rulespec_validators.dashboard_export.run_export", return_value=mock_data):
             result = runner.invoke(cli, ["dashboard"])
             assert result.exit_code == 0
 
     def test_dashboard_import_error(self, runner):
-        with patch("cosilico_validators.dashboard_export.run_export", side_effect=ImportError("no PE")):
+        with patch("rulespec_validators.dashboard_export.run_export", side_effect=ImportError("no PE")):
             result = runner.invoke(cli, ["dashboard"])
             assert result.exit_code != 0
 
@@ -546,7 +546,7 @@ class TestDashboardCommand:
             "overall": {"matchRate": 0, "totalHouseholds": 0, "meanAbsoluteError": 0},
         }
         output_path = str(tmp_path / "output.json")
-        with patch("cosilico_validators.dashboard_export.run_export", return_value=mock_data):
+        with patch("rulespec_validators.dashboard_export.run_export", return_value=mock_data):
             result = runner.invoke(cli, ["dashboard", "-o", output_path])
             assert result.exit_code == 0
 
@@ -555,8 +555,8 @@ class TestHarnessCommands:
     def test_harness_run(self, runner):
         result_obj = _make_harness_result()
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.scorecard.generate_compact_scorecard", return_value="test scorecard"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.scorecard.generate_compact_scorecard", return_value="test scorecard"),
         ):
             result = runner.invoke(cli, ["harness", "run"])
             assert result.exit_code == 0
@@ -564,8 +564,8 @@ class TestHarnessCommands:
     def test_harness_run_with_alignment(self, runner):
         result_obj = _make_harness_result(with_alignment=True, with_issues=True)
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
         ):
             result = runner.invoke(cli, ["harness", "run"])
             assert result.exit_code == 0
@@ -574,15 +574,15 @@ class TestHarnessCommands:
         result_obj = _make_harness_result()
         output_path = str(tmp_path / "output.json")
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
-            patch("cosilico_validators.harness.checkpoint.save_checkpoint"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
+            patch("rulespec_validators.harness.checkpoint.save_checkpoint"),
         ):
             result = runner.invoke(cli, ["harness", "run", "-o", output_path])
             assert result.exit_code == 0
 
     def test_harness_run_with_baseline(self, runner, tmp_path):
-        from cosilico_validators.harness import Checkpoint
+        from rulespec_validators.harness import Checkpoint
 
         result_obj = _make_harness_result()
         baseline_path = tmp_path / "baseline.json"
@@ -594,9 +594,9 @@ class TestHarnessCommands:
             details={},
         )
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
-            patch("cosilico_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
+            patch("rulespec_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
         ):
             result = runner.invoke(cli, ["harness", "run", "-b", str(baseline_path)])
             assert result.exit_code == 0
@@ -604,8 +604,8 @@ class TestHarnessCommands:
     def test_harness_run_only_quality(self, runner):
         result_obj = _make_harness_result()
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.scorecard.generate_compact_scorecard", return_value="test"),
         ):
             result = runner.invoke(cli, ["harness", "run", "--only", "quality"])
             assert result.exit_code == 0
@@ -614,8 +614,8 @@ class TestHarnessCommands:
         result_obj = _make_harness_result()
         output_path = str(tmp_path / "checkpoint.json")
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.checkpoint.save_checkpoint"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.checkpoint.save_checkpoint"),
         ):
             result = runner.invoke(cli, ["harness", "checkpoint", "--save", output_path])
             assert result.exit_code == 0
@@ -623,14 +623,14 @@ class TestHarnessCommands:
     def test_harness_checkpoint_named(self, runner):
         result_obj = _make_harness_result()
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.checkpoint.save_baseline", return_value=Path("/tmp/test.json")),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.checkpoint.save_baseline", return_value=Path("/tmp/test.json")),
         ):
             result = runner.invoke(cli, ["harness", "checkpoint", "--name", "test"])
             assert result.exit_code == 0
 
     def test_harness_compare(self, runner, tmp_path):
-        from cosilico_validators.harness import Checkpoint
+        from rulespec_validators.harness import Checkpoint
 
         result_obj = _make_harness_result()
         baseline_path = tmp_path / "baseline.json"
@@ -642,11 +642,11 @@ class TestHarnessCommands:
             details={},
         )
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
-            patch("cosilico_validators.harness.checkpoint.compare_checkpoints") as mock_cc,
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
+            patch("rulespec_validators.harness.checkpoint.compare_checkpoints") as mock_cc,
         ):
-            from cosilico_validators.harness import Delta
+            from rulespec_validators.harness import Delta
 
             mock_cc.return_value = Delta(before=mock_cp, after=Checkpoint.from_result(result_obj))
             result = runner.invoke(cli, ["harness", "compare", "-b", str(baseline_path)])
@@ -655,12 +655,12 @@ class TestHarnessCommands:
     def test_harness_compare_no_baseline(self, runner, tmp_path):
         baseline_path = tmp_path / "baseline.json"
         baseline_path.write_text("{}")
-        with patch("cosilico_validators.harness.checkpoint.load_checkpoint", return_value=None):
+        with patch("rulespec_validators.harness.checkpoint.load_checkpoint", return_value=None):
             result = runner.invoke(cli, ["harness", "compare", "-b", str(baseline_path)])
             assert result.exit_code != 0
 
     def test_harness_compare_with_current_file(self, runner, tmp_path):
-        from cosilico_validators.harness import Checkpoint, Delta
+        from rulespec_validators.harness import Checkpoint, Delta
 
         baseline_path = tmp_path / "baseline.json"
         current_path = tmp_path / "current.json"
@@ -673,30 +673,30 @@ class TestHarnessCommands:
             details={},
         )
         with (
-            patch("cosilico_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
-            patch("cosilico_validators.harness.checkpoint.compare_checkpoints") as mock_cc,
+            patch("rulespec_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
+            patch("rulespec_validators.harness.checkpoint.compare_checkpoints") as mock_cc,
         ):
             mock_cc.return_value = Delta(before=mock_cp, after=mock_cp)
             result = runner.invoke(cli, ["harness", "compare", "-b", str(baseline_path), "-c", str(current_path)])
             assert result.exit_code == 0
 
     def test_harness_compare_current_load_fails(self, runner, tmp_path):
-        from cosilico_validators.harness import Checkpoint
+        from rulespec_validators.harness import Checkpoint
 
         baseline_path = tmp_path / "baseline.json"
         current_path = tmp_path / "current.json"
         for p in [baseline_path, current_path]:
             p.write_text("{}")
         mock_cp = Checkpoint(timestamp="2024-01-01", git_commit="abc", scores={"alignment": 0.9}, details={})
-        with patch("cosilico_validators.harness.checkpoint.load_checkpoint", side_effect=[mock_cp, None]):
+        with patch("rulespec_validators.harness.checkpoint.load_checkpoint", side_effect=[mock_cp, None]):
             result = runner.invoke(cli, ["harness", "compare", "-b", str(baseline_path), "-c", str(current_path)])
             assert result.exit_code != 0
 
     def test_harness_scorecard(self, runner):
         result_obj = _make_harness_result()
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
         ):
             result = runner.invoke(cli, ["harness", "scorecard"])
             assert result.exit_code == 0
@@ -705,8 +705,8 @@ class TestHarnessCommands:
         result_obj = _make_harness_result()
         output_path = str(tmp_path / "scorecard.md")
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
         ):
             result = runner.invoke(cli, ["harness", "scorecard", "-o", output_path])
             assert result.exit_code == 0
@@ -714,7 +714,7 @@ class TestHarnessCommands:
 
     def test_harness_scorecard_with_after(self, runner, tmp_path):
         """Test scorecard with --after flag (lines 691-696)."""
-        from cosilico_validators.harness import Checkpoint
+        from rulespec_validators.harness import Checkpoint
 
         result_obj = _make_harness_result()
         after_path = tmp_path / "after.json"
@@ -726,9 +726,9 @@ class TestHarnessCommands:
             details={},
         )
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
-            patch("cosilico_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
+            patch("rulespec_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
         ):
             result = runner.invoke(cli, ["harness", "scorecard", "-a", str(after_path)])
             assert result.exit_code == 0
@@ -739,14 +739,14 @@ class TestHarnessCommands:
         after_path = tmp_path / "after.json"
         after_path.write_text("{}")
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.checkpoint.load_checkpoint", return_value=None),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.checkpoint.load_checkpoint", return_value=None),
         ):
             result = runner.invoke(cli, ["harness", "scorecard", "-a", str(after_path)])
             assert result.exit_code != 0
 
     def test_harness_scorecard_with_before(self, runner, tmp_path):
-        from cosilico_validators.harness import Checkpoint
+        from rulespec_validators.harness import Checkpoint
 
         result_obj = _make_harness_result()
         before_path = tmp_path / "before.json"
@@ -758,9 +758,9 @@ class TestHarnessCommands:
             details={},
         )
         with (
-            patch("cosilico_validators.harness.runner.run_harness", return_value=result_obj),
-            patch("cosilico_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
-            patch("cosilico_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
+            patch("rulespec_validators.harness.runner.run_harness", return_value=result_obj),
+            patch("rulespec_validators.harness.checkpoint.load_checkpoint", return_value=mock_cp),
+            patch("rulespec_validators.harness.scorecard.generate_scorecard", return_value="# Scorecard"),
         ):
             result = runner.invoke(cli, ["harness", "scorecard", "-b", str(before_path)])
             assert result.exit_code == 0

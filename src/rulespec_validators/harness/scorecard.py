@@ -37,7 +37,7 @@ def generate_scorecard(
         Markdown formatted scorecard
     """
     lines = []
-    lines.append("## Cosilico Validation Scorecard")
+    lines.append("## RuleSpec Validation Scorecard")
     lines.append("")
 
     # Summary table

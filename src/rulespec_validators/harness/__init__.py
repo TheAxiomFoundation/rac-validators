@@ -1,4 +1,4 @@
-"""Validation harness for Cosilico encoding work.
+"""Validation harness for RuleSpec encoding work.
 
 Provides comprehensive validation across multiple external calculators,
 quality checks for .yaml files, and PR scorecard generation.

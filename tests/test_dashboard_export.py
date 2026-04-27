@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from cosilico_validators.comparison.aligned import ComparisonResult
-from cosilico_validators.dashboard_export import (
+from rulespec_validators.comparison.aligned import ComparisonResult
+from rulespec_validators.dashboard_export import (
     CDCC_PARAMS_2024,
     CTC_PARAMS_2024,
     EITC_PARAMS_2024,
@@ -15,7 +15,7 @@ from cosilico_validators.dashboard_export import (
     STD_DEDUCTION_PARAMS_2024,
     VARIABLES,
     get_git_commit,
-    load_cosilico_engine,
+    load_rulespec_engine,
     load_rulespec_file,
     main,
     result_to_section,
@@ -51,7 +51,7 @@ class TestLoadRuleSpecFile:
         rulespec_dir.mkdir(parents=True)
         (rulespec_dir / "32.yaml").write_text("test content")
 
-        with patch("cosilico_validators.dashboard_export.Path.home", return_value=tmp_path):
+        with patch("rulespec_validators.dashboard_export.Path.home", return_value=tmp_path):
             result = load_rulespec_file("26/32")
             assert result == "test content"
 
@@ -61,7 +61,7 @@ class TestLoadRuleSpecFile:
         rulespec_dir.mkdir(parents=True)
         (rulespec_dir / "a.yaml").write_text("sub content")
 
-        with patch("cosilico_validators.dashboard_export.Path.home", return_value=tmp_path):
+        with patch("rulespec_validators.dashboard_export.Path.home", return_value=tmp_path):
             result = load_rulespec_file("26/63")
             assert result == "sub content"
 
@@ -69,21 +69,21 @@ class TestLoadRuleSpecFile:
         statute_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "statute"
         statute_dir.mkdir(parents=True)
 
-        with patch("cosilico_validators.dashboard_export.Path.home", return_value=tmp_path):
+        with patch("rulespec_validators.dashboard_export.Path.home", return_value=tmp_path):
             result = load_rulespec_file("99/99")
             assert result is None
 
 
 class TestResultToSection:
-    def _make_result(self, variable="eitc", match_rate=0.95, mae=50.0, cos_total=60e9, pe_total=62e9, n=100):
+    def _make_result(self, variable="eitc", match_rate=0.95, mae=50.0, rulespec_total=60e9, pe_total=62e9, n=100):
         return ComparisonResult(
             variable=variable,
             match_rate=match_rate,
             mean_absolute_error=mae,
             n_records=n,
-            cosilico_total=cos_total,
+            rulespec_total=rulespec_total,
             policyengine_total=pe_total,
-            cosilico_values=np.zeros(n),
+            rulespec_values=np.zeros(n),
             policyengine_values=np.zeros(n),
             error_percentiles={"p50": 10, "p90": 50, "p95": 100, "p99": 500, "max": 1000},
         )
@@ -96,10 +96,10 @@ class TestResultToSection:
         assert section["variable"] == "eitc"
         assert section["implemented"] is True
         assert section["summary"]["matchRate"] == 0.95
-        assert "Cosilico total" in section["notes"]
+        assert "RuleSpec total" in section["notes"]
 
     def test_unimplemented_variable(self):
-        result = self._make_result(variable="ctc", match_rate=0.0, mae=0.0, cos_total=0.0, pe_total=50e9)
+        result = self._make_result(variable="ctc", match_rate=0.0, mae=0.0, rulespec_total=0.0, pe_total=50e9)
         meta = {"section": "26/24", "title": "CTC"}
         section = result_to_section(result, 100000, meta, implemented=False)
         assert section["implemented"] is False
@@ -150,34 +150,34 @@ class TestVariables:
             assert "title" in meta, f"{name} missing title"
 
 
-class TestLoadCosilicoEngine:
+class TestLoadRuleSpecEngine:
     def test_import_error(self):
-        with patch("cosilico_validators.dashboard_export.Path.home") as mock_home:
+        with patch("rulespec_validators.dashboard_export.Path.home") as mock_home:
             mock_home.return_value = Path("/nonexistent")
             with pytest.raises(ImportError):
-                load_cosilico_engine()
+                load_rulespec_engine()
 
     def test_import_success(self):
-        mock_ve = MagicMock()
         mock_parser = MagicMock()
-        mock_dr = MagicMock()
+        mock_batch = MagicMock()
+        mock_loader = MagicMock()
         with (
-            patch("cosilico_validators.dashboard_export.Path.home") as mock_home,
+            patch("rulespec_validators.dashboard_export.Path.home") as mock_home,
             patch.dict(
                 "sys.modules",
                 {
-                    "cosilico": MagicMock(),
-                    "cosilico.vectorized_executor": MagicMock(VectorizedExecutor=mock_ve),
-                    "cosilico.dsl_parser": MagicMock(parse_dsl=mock_parser),
-                    "cosilico.dependency_resolver": MagicMock(DependencyResolver=mock_dr),
+                    "rulespec_compile": MagicMock(),
+                    "rulespec_compile.batch_executor": MagicMock(execute_lowered_program_batch=mock_batch),
+                    "rulespec_compile.parser": MagicMock(parse_rulespec=mock_parser),
+                    "rulespec_compile.program": MagicMock(load_rulespec_program=mock_loader),
                 },
             ),
         ):
             mock_home.return_value = Path("/nonexistent")
-            ve, parser, dr = load_cosilico_engine()
-            assert ve is mock_ve
+            ve, parser, dr = load_rulespec_engine()
             assert parser is mock_parser
-            assert dr is mock_dr
+            assert dr(statute_root=Path("/rules-us")).resolve("statute/26/32") == Path("/rules-us/statute/26/32.yaml")
+            assert ve.__name__ == "VectorizedExecutor"
 
 
 class TestRunExport:
@@ -233,9 +233,9 @@ class TestRunExport:
             match_rate=0.95,
             mean_absolute_error=50.0,
             n_records=n,
-            cosilico_total=60e9,
+            rulespec_total=60e9,
             policyengine_total=62e9,
-            cosilico_values=np.zeros(n),
+            rulespec_values=np.zeros(n),
             policyengine_values=np.zeros(n),
             error_percentiles={"p50": 10, "p90": 50, "p95": 100, "p99": 500, "max": 1000},
         )
@@ -253,10 +253,10 @@ class TestRunExport:
 
         with (
             patch.dict("sys.modules", {"policyengine_us": mock_pe_module}),
-            patch("cosilico_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
-            patch("cosilico_validators.dashboard_export.compare_variable", return_value=mock_result),
-            patch("cosilico_validators.dashboard_export.load_cosilico_engine", side_effect=ImportError("no engine")),
-            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value=None),
+            patch("rulespec_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
+            patch("rulespec_validators.dashboard_export.compare_variable", return_value=mock_result),
+            patch("rulespec_validators.dashboard_export.load_rulespec_engine", side_effect=ImportError("no engine")),
+            patch("rulespec_validators.dashboard_export.load_rulespec_file", return_value=None),
         ):
             data = run_export(year=2024, output_path=output_path)
 
@@ -313,9 +313,9 @@ class TestRunExport:
             match_rate=0.95,
             mean_absolute_error=50.0,
             n_records=n,
-            cosilico_total=60e9,
+            rulespec_total=60e9,
             policyengine_total=62e9,
-            cosilico_values=np.zeros(n),
+            rulespec_values=np.zeros(n),
             policyengine_values=np.zeros(n),
             error_percentiles={"p50": 10, "p90": 50, "p95": 100, "p99": 500, "max": 1000},
         )
@@ -335,13 +335,13 @@ class TestRunExport:
 
         with (
             patch.dict("sys.modules", {"policyengine_us": mock_pe_module}),
-            patch("cosilico_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
-            patch("cosilico_validators.dashboard_export.compare_variable", return_value=mock_result),
+            patch("rulespec_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
+            patch("rulespec_validators.dashboard_export.compare_variable", return_value=mock_result),
             patch(
-                "cosilico_validators.dashboard_export.load_cosilico_engine",
+                "rulespec_validators.dashboard_export.load_rulespec_engine",
                 return_value=(mock_executor_cls, mock_parser, mock_dep_resolver_cls),
             ),
-            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value="mock rulespec code"),
+            patch("rulespec_validators.dashboard_export.load_rulespec_file", return_value="mock rulespec code"),
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.read_text", return_value="mock rulespec code"),
         ):
@@ -366,8 +366,8 @@ class TestRunExport:
 
         with (
             patch.dict("sys.modules", {"policyengine_us": mock_pe_module}),
-            patch("cosilico_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
-            patch("cosilico_validators.dashboard_export.load_cosilico_engine", side_effect=ImportError("no engine")),
+            patch("rulespec_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
+            patch("rulespec_validators.dashboard_export.load_rulespec_engine", side_effect=ImportError("no engine")),
         ):
             data = run_export(year=2024)
             # Should still return valid structure even with errors
@@ -385,9 +385,9 @@ class TestRunExport:
             match_rate=0.5,
             mean_absolute_error=100.0,
             n_records=n,
-            cosilico_total=0,
+            rulespec_total=0,
             policyengine_total=62e9,
-            cosilico_values=np.zeros(n),
+            rulespec_values=np.zeros(n),
             policyengine_values=np.zeros(n),
             error_percentiles={"p50": 10, "p90": 50, "p95": 100, "p99": 500, "max": 1000},
         )
@@ -400,10 +400,10 @@ class TestRunExport:
 
         with (
             patch.dict("sys.modules", {"policyengine_us": mock_pe_module}),
-            patch("cosilico_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
-            patch("cosilico_validators.dashboard_export.compare_variable", return_value=mock_result),
-            patch("cosilico_validators.dashboard_export.load_cosilico_engine", side_effect=ImportError("no engine")),
-            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value=None),
+            patch("rulespec_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
+            patch("rulespec_validators.dashboard_export.compare_variable", return_value=mock_result),
+            patch("rulespec_validators.dashboard_export.load_rulespec_engine", side_effect=ImportError("no engine")),
+            patch("rulespec_validators.dashboard_export.load_rulespec_file", return_value=None),
         ):
             data = run_export(year=2024)
             assert isinstance(data, dict)
@@ -462,9 +462,9 @@ class TestRunExportEngineBranches:
             match_rate=0.95,
             mean_absolute_error=50.0,
             n_records=n,
-            cosilico_total=60e9,
+            rulespec_total=60e9,
             policyengine_total=62e9,
-            cosilico_values=np.zeros(n),
+            rulespec_values=np.zeros(n),
             policyengine_values=np.zeros(n),
             error_percentiles={"p50": 10, "p90": 50, "p95": 100, "p99": 500, "max": 1000},
         )
@@ -501,14 +501,14 @@ class TestRunExportEngineBranches:
 
         with (
             patch.dict("sys.modules", {"policyengine_us": mock_pe_module}),
-            patch("cosilico_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
-            patch("cosilico_validators.dashboard_export.compare_variable", return_value=mock_result),
+            patch("rulespec_validators.dashboard_export.load_common_dataset", return_value=mock_dataset),
+            patch("rulespec_validators.dashboard_export.compare_variable", return_value=mock_result),
             patch(
-                "cosilico_validators.dashboard_export.load_cosilico_engine",
+                "rulespec_validators.dashboard_export.load_rulespec_engine",
                 return_value=(mock_executor_cls, MagicMock(), mock_dep_resolver_cls),
             ),
-            patch("cosilico_validators.dashboard_export.load_rulespec_file", return_value="mock rulespec"),
-            patch("cosilico_validators.dashboard_export.Path") as mock_path_cls,
+            patch("rulespec_validators.dashboard_export.load_rulespec_file", return_value="mock rulespec"),
+            patch("rulespec_validators.dashboard_export.Path") as mock_path_cls,
         ):
             # Make Path.home() / ... / "statute" / "26" / "32.yaml" all return mock_rulespec_path
             mock_path_cls.home.return_value.__truediv__ = MagicMock(return_value=mock_rulespec_path)
@@ -532,27 +532,29 @@ class TestRunExportEngineBranches:
         assert len(data["sections"]) > 0
 
     def test_load_engine_path_exists(self, tmp_path):
-        """Test load_cosilico_engine when path exists (line 91)."""
-        engine_dir = tmp_path / "CosilicoAI" / "cosilico-engine" / "src"
+        """Test load_rulespec_engine when path exists (line 91)."""
+        engine_dir = tmp_path / "TheAxiomFoundation" / "rulespec-compile" / "src"
         engine_dir.mkdir(parents=True)
 
-        mock_ve = MagicMock()
         mock_parser = MagicMock()
-        mock_dr = MagicMock()
+        mock_batch = MagicMock()
+        mock_loader = MagicMock()
         with (
-            patch("cosilico_validators.dashboard_export.Path.home", return_value=tmp_path),
+            patch("rulespec_validators.dashboard_export.Path.home", return_value=tmp_path),
             patch.dict(
                 "sys.modules",
                 {
-                    "cosilico": MagicMock(),
-                    "cosilico.vectorized_executor": MagicMock(VectorizedExecutor=mock_ve),
-                    "cosilico.dsl_parser": MagicMock(parse_dsl=mock_parser),
-                    "cosilico.dependency_resolver": MagicMock(DependencyResolver=mock_dr),
+                    "rulespec_compile": MagicMock(),
+                    "rulespec_compile.batch_executor": MagicMock(execute_lowered_program_batch=mock_batch),
+                    "rulespec_compile.parser": MagicMock(parse_rulespec=mock_parser),
+                    "rulespec_compile.program": MagicMock(load_rulespec_program=mock_loader),
                 },
             ),
         ):
-            ve, parser, dr = load_cosilico_engine()
-            assert ve is mock_ve
+            ve, parser, dr = load_rulespec_engine()
+            assert parser is mock_parser
+            assert dr(statute_root=tmp_path).resolve("statute/26/32") == tmp_path / "statute/26/32.yaml"
+            assert ve.__name__ == "VectorizedExecutor"
 
 
 class TestMainCommand:
@@ -560,7 +562,7 @@ class TestMainCommand:
         from click.testing import CliRunner
 
         runner = CliRunner()
-        with patch("cosilico_validators.dashboard_export.run_export") as mock_run:
+        with patch("rulespec_validators.dashboard_export.run_export") as mock_run:
             mock_run.return_value = {
                 "coverage": {"implemented": 5, "total": 13},
                 "overall": {"matchRate": 0.95, "meanAbsoluteError": 50},
@@ -573,7 +575,7 @@ class TestMainCommand:
 
         runner = CliRunner()
         output_path = str(tmp_path / "output.json")
-        with patch("cosilico_validators.dashboard_export.run_export") as mock_run:
+        with patch("rulespec_validators.dashboard_export.run_export") as mock_run:
             mock_run.return_value = {
                 "coverage": {"implemented": 5, "total": 13},
                 "overall": {"matchRate": 0.95, "meanAbsoluteError": 50},

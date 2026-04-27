@@ -22,14 +22,14 @@ class RecordComparison:
     n_records: int
 
     # Per-model arrays (same length, aligned by record)
-    cosilico: np.ndarray
+    rulespec: np.ndarray
     policyengine: np.ndarray
     taxsim: np.ndarray
     taxcalc: np.ndarray
     weights: np.ndarray
 
     # Timing
-    cosilico_ms: float
+    rulespec_ms: float
     policyengine_ms: float
     taxsim_ms: float
     taxcalc_ms: float
@@ -37,7 +37,7 @@ class RecordComparison:
     @property
     def weighted_totals(self) -> dict[str, float]:
         return {
-            "cosilico": float((self.cosilico * self.weights).sum()),
+            "rulespec": float((self.rulespec * self.weights).sum()),
             "policyengine": float((self.policyengine * self.weights).sum()),
             "taxsim": float((self.taxsim * self.weights).sum()),
             "taxcalc": float((self.taxcalc * self.weights).sum()),
@@ -48,7 +48,7 @@ class RecordComparison:
         """Mean absolute difference vs PolicyEngine (weighted)."""
         pe = self.policyengine
         return {
-            "cosilico": float((np.abs(self.cosilico - pe) * self.weights).sum() / self.weights.sum()),
+            "rulespec": float((np.abs(self.rulespec - pe) * self.weights).sum() / self.weights.sum()),
             "taxsim": float((np.abs(self.taxsim - pe) * self.weights).sum() / self.weights.sum()),
             "taxcalc": float((np.abs(self.taxcalc - pe) * self.weights).sum() / self.weights.sum()),
         }
@@ -60,7 +60,7 @@ class RecordComparison:
         w = self.weights
         total_weight = w.sum()
         return {
-            "cosilico": float(((np.abs(self.cosilico - pe) <= tolerance) * w).sum() / total_weight),
+            "rulespec": float(((np.abs(self.rulespec - pe) <= tolerance) * w).sum() / total_weight),
             "taxsim": float(((np.abs(self.taxsim - pe) <= tolerance) * w).sum() / total_weight),
             "taxcalc": float(((np.abs(self.taxcalc - pe) <= tolerance) * w).sum() / total_weight),
         }
@@ -68,7 +68,7 @@ class RecordComparison:
 
 def load_cps_inputs(year: int = 2024) -> pd.DataFrame:
     """Load our CPS tax units - the common input for all models."""
-    data_sources = Path.home() / "CosilicoAI" / "cosilico-data-sources" / "micro" / "us"
+    data_sources = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
     if str(data_sources) not in sys.path:
         sys.path.insert(0, str(data_sources))
 
@@ -77,13 +77,13 @@ def load_cps_inputs(year: int = 2024) -> pd.DataFrame:
     return load_and_build_tax_units(year)
 
 
-def run_cosilico(df: pd.DataFrame, year: int = 2024) -> tuple[pd.DataFrame, float]:
-    """Run Cosilico on CPS data. Returns (results_df, elapsed_ms)."""
-    data_sources = Path.home() / "CosilicoAI" / "cosilico-data-sources" / "micro" / "us"
+def run_rulespec(df: pd.DataFrame, year: int = 2024) -> tuple[pd.DataFrame, float]:
+    """Run RuleSpec on CPS data. Returns (results_df, elapsed_ms)."""
+    data_sources = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
     if str(data_sources) not in sys.path:
         sys.path.insert(0, str(data_sources))
 
-    from cosilico_runner import run_all_calculations
+    from rulespec_runner import run_all_calculations
 
     start = time.perf_counter()
     result = run_all_calculations(df.copy(), year)
@@ -232,7 +232,7 @@ def run_taxsim(df: pd.DataFrame, year: int = 2024) -> tuple[pd.DataFrame, float]
     import csv
     import subprocess
 
-    from cosilico_validators.comparison.multi_validator import get_taxsim_executable_path
+    from rulespec_validators.comparison.multi_validator import get_taxsim_executable_path
 
     start = time.perf_counter()
 
@@ -331,8 +331,8 @@ def compare_records(
     print(f"Running on {len(df):,} tax units...")
 
     # Run each model on same data
-    print("  Running Cosilico...")
-    cos_df, cos_ms = run_cosilico(df, year)
+    print("  Running RuleSpec...")
+    rulespec_df, rulespec_ms = run_rulespec(df, year)
 
     print("  Running PolicyEngine...")
     pe_df, pe_ms = run_policyengine(df, year)
@@ -345,21 +345,21 @@ def compare_records(
     weights = df["weight"].values
 
     for var in variables:
-        cos_col = var
+        rulespec_col = var
         if var == "non_refundable_ctc":
-            cos_col = "non_refundable_ctc"
+            rulespec_col = "non_refundable_ctc"
         elif var == "refundable_ctc":
-            cos_col = "refundable_ctc"
+            rulespec_col = "refundable_ctc"
 
         results[var] = RecordComparison(
             variable=var,
             n_records=len(df),
-            cosilico=cos_df[cos_col].values if cos_col in cos_df.columns else np.zeros(len(df)),
+            rulespec=rulespec_df[rulespec_col].values if rulespec_col in rulespec_df.columns else np.zeros(len(df)),
             policyengine=pe_df[var].values if var in pe_df.columns else np.zeros(len(df)),
             taxsim=ts_df[var].values if var in ts_df.columns else np.zeros(len(df)),
             taxcalc=np.zeros(len(df)),  # TODO: add Tax-Calculator
             weights=weights,
-            cosilico_ms=cos_ms,
+            rulespec_ms=rulespec_ms,
             policyengine_ms=pe_ms,
             taxsim_ms=ts_ms,
             taxcalc_ms=0,

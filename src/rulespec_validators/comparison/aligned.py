@@ -19,7 +19,7 @@ except ImportError:
 
 @dataclass
 class CommonDataset:
-    """Shared input data for both Cosilico and PolicyEngine calculations."""
+    """Shared input data for both RuleSpec and PolicyEngine calculations."""
 
     # Tax unit identifiers
     tax_unit_id: np.ndarray
@@ -194,7 +194,7 @@ def load_common_dataset(year: int = 2024) -> CommonDataset:
         else np.zeros_like(tax_unit_id, dtype=float),
         other_income=np.zeros_like(tax_unit_id, dtype=float),
         investment_income=calc("net_investment_income"),
-        # PE computed values (used as inputs for some Cosilico formulas)
+        # PE computed values (used as inputs for some RuleSpec formulas)
         adjusted_gross_income=calc("adjusted_gross_income"),
         taxable_income=calc("taxable_income"),
         # Demographics
@@ -264,25 +264,25 @@ class ComparisonResult:
     match_rate: float  # Within $1 tolerance
     mean_absolute_error: float
     n_records: int
-    cosilico_total: float  # Weighted
+    rulespec_total: float  # Weighted
     policyengine_total: float  # Weighted
-    cosilico_values: np.ndarray
+    rulespec_values: np.ndarray
     policyengine_values: np.ndarray
     error_percentiles: dict
 
 
 def compare_variable(
     dataset: CommonDataset,
-    cosilico_func: Callable[[CommonDataset], np.ndarray],
+    rulespec_func: Callable[[CommonDataset], np.ndarray],
     pe_values: np.ndarray,
     variable_name: str,
     tolerance: float = 1.0,
 ) -> ComparisonResult:
-    """Compare Cosilico calculation to PolicyEngine on common dataset."""
+    """Compare RuleSpec calculation to PolicyEngine on common dataset."""
 
-    cos_values = cosilico_func(dataset)
+    rulespec_values = rulespec_func(dataset)
 
-    diff = np.abs(cos_values - pe_values)
+    diff = np.abs(rulespec_values - pe_values)
     match_rate = (diff <= tolerance).mean()
     mae = diff.mean()
 
@@ -290,10 +290,10 @@ def compare_variable(
         variable=variable_name,
         match_rate=float(match_rate),
         mean_absolute_error=float(mae),
-        n_records=len(cos_values),
-        cosilico_total=float((cos_values * dataset.weight).sum()),
+        n_records=len(rulespec_values),
+        rulespec_total=float((rulespec_values * dataset.weight).sum()),
         policyengine_total=float((pe_values * dataset.weight).sum()),
-        cosilico_values=cos_values,
+        rulespec_values=rulespec_values,
         policyengine_values=pe_values,
         error_percentiles={
             "p50": float(np.percentile(diff, 50)),
@@ -319,19 +319,19 @@ def run_aligned_comparison(year: int = 2024) -> dict:
     dataset = load_common_dataset(year)
     print(f"  {dataset.n_records:,} tax units loaded")
 
-    # Load Cosilico implementations
-    data_sources_path = Path.home() / "CosilicoAI" / "cosilico-data-sources" / "micro" / "us"
+    # Load RuleSpec implementations
+    data_sources_path = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
     sys.path.insert(0, str(data_sources_path))
     import pandas as pd
-    from cosilico_runner import PARAMS_2024, calculate_eitc, calculate_income_tax
+    from rulespec_runner import PARAMS_2024, calculate_eitc, calculate_income_tax
 
     # Get PE values
     sim = Microsimulation()
     pe_eitc = np.array(sim.calculate("eitc", year))
     pe_income_tax = np.array(sim.calculate("income_tax_before_credits", year))
 
-    # Define Cosilico functions that use common dataset
-    def cos_eitc(ds: CommonDataset) -> np.ndarray:
+    # Define RuleSpec functions that use common dataset
+    def rulespec_eitc(ds: CommonDataset) -> np.ndarray:
         df = pd.DataFrame(
             {
                 "earned_income": ds.earned_income,
@@ -343,7 +343,7 @@ def run_aligned_comparison(year: int = 2024) -> dict:
         )
         return calculate_eitc(df, PARAMS_2024)
 
-    def cos_income_tax(ds: CommonDataset) -> np.ndarray:
+    def rulespec_income_tax(ds: CommonDataset) -> np.ndarray:
         df = pd.DataFrame(
             {
                 "taxable_income": ds.taxable_income,
@@ -356,13 +356,13 @@ def run_aligned_comparison(year: int = 2024) -> dict:
     results = []
 
     print("\nComparing EITC...")
-    eitc_result = compare_variable(dataset, cos_eitc, pe_eitc, "eitc")
+    eitc_result = compare_variable(dataset, rulespec_eitc, pe_eitc, "eitc")
     results.append(eitc_result)
     print(f"  Match rate: {eitc_result.match_rate * 100:.1f}%")
     print(f"  MAE: ${eitc_result.mean_absolute_error:,.0f}")
 
     print("\nComparing Income Tax...")
-    tax_result = compare_variable(dataset, cos_income_tax, pe_income_tax, "income_tax_before_credits")
+    tax_result = compare_variable(dataset, rulespec_income_tax, pe_income_tax, "income_tax_before_credits")
     results.append(tax_result)
     print(f"  Match rate: {tax_result.match_rate * 100:.1f}%")
     print(f"  MAE: ${tax_result.mean_absolute_error:,.0f}")
@@ -387,9 +387,9 @@ def run_aligned_comparison(year: int = 2024) -> dict:
                 "match_rate": r.match_rate,
                 "mean_absolute_error": r.mean_absolute_error,
                 "n_records": r.n_records,
-                "cosilico_weighted_total": r.cosilico_total,
+                "rulespec_weighted_total": r.rulespec_total,
                 "policyengine_weighted_total": r.policyengine_total,
-                "difference_billions": (r.cosilico_total - r.policyengine_total) / 1e9,
+                "difference_billions": (r.rulespec_total - r.policyengine_total) / 1e9,
                 "error_percentiles": r.error_percentiles,
             }
             for r in results

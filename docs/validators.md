@@ -3,7 +3,7 @@
 `rulespec-validators` runs an encoded rule through multiple independent tax
 calculators (the "oracles") and compares their outputs. Each oracle is
 a separate validator class under
-`src/cosilico_validators/validators/`. This document catalogs them so
+`src/rulespec_validators/validators/`. This document catalogs them so
 that adding new oracles, debugging failing ones, and triaging CI
 problems is straightforward.
 
@@ -30,7 +30,7 @@ registered as `PRIMARY`.
 
 ### PolicyEngine
 
-- **Install**: `pip install "cosilico-validators[policyengine]"` or
+- **Install**: `pip install "rulespec-validators[policyengine]"` or
   `uv pip install policyengine-us policyengine-core`.
 - **Coverage**: federal & state income tax, EITC, CTC, SNAP, Medicaid,
   TANF, AGI, standard deduction variants. See `VARIABLE_MAPPING` in
@@ -63,7 +63,7 @@ registered as `PRIMARY`.
 
 ### PSL Tax-Calculator
 
-- **Install**: `pip install "cosilico-validators[psl]"` pulls
+- **Install**: `pip install "rulespec-validators[psl]"` pulls
   `taxcalc` and `behresp`.
 - **Coverage**: U.S. federal income and payroll taxes. No state taxes.
   No non-tax benefits.

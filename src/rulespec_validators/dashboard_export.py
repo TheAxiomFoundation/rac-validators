@@ -1,8 +1,8 @@
-"""Export validation results to cosilico.ai dashboard format.
+"""Export validation results to axiom-foundation.org dashboard format.
 
 Usage:
-    python -m cosilico_validators.dashboard_export -o validation-results.json
-    cp validation-results.json /path/to/cosilico.ai/public/data/
+    python -m rulespec_validators.dashboard_export -o validation-results.json
+    cp validation-results.json /path/to/axiom-foundation.org/public/data/
 
 ################################################################################
 #                                                                              #
@@ -16,10 +16,10 @@ Usage:
 #                                                                              #
 #   ALL TAX CALCULATION LOGIC MUST COME FROM:                                  #
 #     - rules-us/*.yaml files (statute encodings)                            #
-#     - cosilico-engine (DSL executor)                                         #
+#     - rulespec-compile (DSL executor)                                         #
 #                                                                              #
 #   This validator ONLY:                                                       #
-#     1. Loads outputs from Cosilico engine                                    #
+#     1. Loads outputs from RuleSpec engine                                    #
 #     2. Loads outputs from external validators (PE, TAXSIM, etc)              #
 #     3. Compares them                                                         #
 #                                                                              #
@@ -29,7 +29,7 @@ Usage:
 #     - Income aggregations                                                    #
 #     - ANY tax rule implementations                                           #
 #                                                                              #
-#   If validation fails, FIX THE .RuleSpec FILES, not this validator!               #
+#   If validation fails, FIX THE .yaml FILES, not this validator!                  #
 #                                                                              #
 ################################################################################
 """
@@ -39,12 +39,12 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 import numpy as np
 
-from cosilico_validators.comparison.aligned import (
+from rulespec_validators.comparison.aligned import (
     ComparisonResult,
     compare_variable,
     load_common_dataset,
@@ -83,17 +83,71 @@ def get_git_commit() -> str:
         return "unknown"
 
 
-def load_cosilico_engine():
-    """Load the Cosilico engine from cosilico-engine repo."""
-    engine_path = Path.home() / "CosilicoAI" / "cosilico-engine" / "src"
+def load_rulespec_engine():
+    """Load the RuleSpec engine from rulespec-compile repo."""
+    engine_path = Path.home() / "TheAxiomFoundation" / "rulespec-compile" / "src"
     if engine_path.exists():
         sys.path.insert(0, str(engine_path))
 
-    from cosilico.dependency_resolver import DependencyResolver
-    from cosilico.dsl_parser import parse_dsl
-    from cosilico.vectorized_executor import VectorizedExecutor
+    from rulespec_compile.batch_executor import execute_lowered_program_batch
+    from rulespec_compile.parser import parse_rulespec
+    from rulespec_compile.program import load_rulespec_program
 
-    return VectorizedExecutor, parse_dsl, DependencyResolver
+    class DependencyResolver:
+        def __init__(self, statute_root: Path):
+            self.statute_root = statute_root
+
+        def resolve(self, entry_point: str) -> Path:
+            path = self.statute_root / entry_point
+            if path.suffix != ".yaml":
+                path = path.with_suffix(".yaml")
+            return path
+
+    class VectorizedExecutor:
+        def __init__(
+            self,
+            parameters: dict[str, Any] | None = None,
+            dependency_resolver: DependencyResolver | None = None,
+        ):
+            self.parameters = parameters or {}
+            self.dependency_resolver = dependency_resolver
+
+        def execute(
+            self,
+            *,
+            code: str,
+            inputs: dict[str, Any],
+            output_variables: list[str],
+        ) -> dict[str, np.ndarray]:
+            parsed = parse_rulespec(code)
+            lowered = parsed.to_lowered_program(
+                parameter_overrides=self.parameters,
+                outputs=output_variables,
+            )
+            return self._run_lowered(lowered, inputs)
+
+        def execute_lazy(
+            self,
+            *,
+            entry_point: str,
+            inputs: dict[str, Any],
+            output_variables: list[str],
+        ) -> dict[str, np.ndarray]:
+            if self.dependency_resolver is None:
+                raise ValueError("execute_lazy requires a dependency resolver")
+            program = load_rulespec_program(self.dependency_resolver.resolve(entry_point))
+            lowered = program.to_lowered_program(
+                parameter_overrides=self.parameters,
+                outputs=output_variables,
+            )
+            return self._run_lowered(lowered, inputs)
+
+        @staticmethod
+        def _run_lowered(lowered: Any, inputs: dict[str, Any]) -> dict[str, np.ndarray]:
+            frame = execute_lowered_program_batch(lowered, inputs)
+            return {column: frame[column].to_numpy() for column in frame.columns}
+
+    return VectorizedExecutor, parse_rulespec, DependencyResolver
 
 
 # EITC parameters for 2024 (from IRS Rev. Proc. 2023-34)
@@ -229,9 +283,9 @@ def result_to_section(result: ComparisonResult, n_households: int, meta: dict, i
             }
         },
         "notes": (
-            f"Cosilico total: ${result.cosilico_total / 1e9:.1f}B, "
+            f"RuleSpec total: ${result.rulespec_total / 1e9:.1f}B, "
             f"PE total: ${result.policyengine_total / 1e9:.1f}B, "
-            f"Diff: ${(result.cosilico_total - result.policyengine_total) / 1e9:+.1f}B"
+            f"Diff: ${(result.rulespec_total - result.policyengine_total) / 1e9:+.1f}B"
         )
         if implemented
         else "Not yet implemented in .yaml files",
@@ -242,7 +296,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
     """Run validation and export to dashboard format.
 
     This function:
-    1. Loads the Cosilico engine
+    1. Loads the RuleSpec engine
     2. For each variable, loads the .yaml file and executes it
     3. Compares against PolicyEngine outputs
     4. Returns dashboard-formatted results
@@ -254,10 +308,10 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
     dataset = load_common_dataset(year)
     print(f"  {dataset.n_records:,} tax units loaded")
 
-    # Load Cosilico engine
-    print("Loading Cosilico engine...")
+    # Load RuleSpec engine
+    print("Loading RuleSpec engine...")
     try:
-        VectorizedExecutor, Parser, DependencyResolver = load_cosilico_engine()
+        VectorizedExecutor, Parser, DependencyResolver = load_rulespec_engine()
         engine_available = True
 
         # Create dependency resolver pointing to rules-us
@@ -284,7 +338,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             # Try to load and execute .yaml file
             rulespec_code = load_rulespec_file(meta["section"])
             implemented = False
-            cos_values = None
+            rulespec_values = None
 
             # Special handling for EITC - we have working engine integration
             if var_name == "eitc" and engine_available:
@@ -308,7 +362,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["eitc_standalone"]
                         )
-                        cos_values = results_dict["eitc_standalone"]
+                        rulespec_values = results_dict["eitc_standalone"]
                         implemented = True
                 except Exception as e:
                     print(f"    Engine execution failed: {e}")
@@ -337,7 +391,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["niit_standalone"]
                         )
-                        cos_values = results_dict["niit_standalone"]
+                        rulespec_values = results_dict["niit_standalone"]
                         implemented = True
                 except Exception as e:
                     print(f"    NIIT engine failed: {e}")
@@ -390,7 +444,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     results_dict = executor.execute_lazy(
                         entry_point="statute/26/62/a", inputs=inputs, output_variables=["adjusted_gross_income"]
                     )
-                    cos_values = results_dict["adjusted_gross_income"]
+                    rulespec_values = results_dict["adjusted_gross_income"]
                     implemented = True
                 except Exception as e:
                     print(f"    AGI engine failed: {e}")
@@ -423,7 +477,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     results_dict = executor.execute_lazy(
                         entry_point="statute/26/24/a", inputs=inputs, output_variables=["ctc_total"]
                     )
-                    cos_values = results_dict["ctc_total"]
+                    rulespec_values = results_dict["ctc_total"]
                     implemented = True
                 except Exception as e:
                     print(f"    CTC engine failed: {e}")
@@ -452,7 +506,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     results_dict = executor.execute_lazy(
                         entry_point="statute/26/24/a", inputs=inputs, output_variables=["child_tax_credit"]
                     )
-                    cos_values = results_dict["child_tax_credit"]
+                    rulespec_values = results_dict["child_tax_credit"]
                     implemented = True
                 except Exception as e:
                     print(f"    Non-refundable CTC engine failed: {e}")
@@ -488,7 +542,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         inputs=inputs,
                         output_variables=["additional_child_tax_credit"],
                     )
-                    cos_values = results_dict["additional_child_tax_credit"]
+                    rulespec_values = results_dict["additional_child_tax_credit"]
                     implemented = True
                 except Exception as e:
                     print(f"    Refundable CTC (ACTC) engine failed: {e}")
@@ -525,7 +579,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["cdcc_standalone"]
                         )
-                        cos_values = results_dict["cdcc_standalone"]
+                        rulespec_values = results_dict["cdcc_standalone"]
                         implemented = True
                 except Exception as e:
                     print(f"    CDCC engine failed: {e}")
@@ -564,7 +618,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["standard_deduction_standalone"]
                         )
-                        cos_values = results_dict["standard_deduction_standalone"]
+                        rulespec_values = results_dict["standard_deduction_standalone"]
                         implemented = True
                 except Exception as e:
                     print(f"    Standard Deduction engine failed: {e}")
@@ -572,16 +626,16 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
 
             if not implemented:
                 # Return zeros for unimplemented variables
-                def cos_func(ds):
+                def rulespec_func(ds):
                     return np.zeros(ds.n_records)
             else:
-                # Capture cos_values in closure
-                _cos_values = cos_values
+                # Capture rulespec_values in closure
+                _rulespec_values = rulespec_values
 
-                def cos_func(ds, v=_cos_values):
+                def rulespec_func(ds, v=_rulespec_values):
                     return v
 
-            result = compare_variable(dataset, cos_func, pe_values, var_name)
+            result = compare_variable(dataset, rulespec_func, pe_values, var_name)
             results.append((result, meta, implemented))
 
             status = "✓ ENGINE" if implemented else "○ (not in engine yet)"

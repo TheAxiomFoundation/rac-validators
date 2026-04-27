@@ -3,8 +3,8 @@
 import os
 from unittest.mock import MagicMock, patch
 
-from cosilico_validators.upstream import GitHubIssueManager as UpstreamGitHubIssueManager
-from cosilico_validators.upstream.github import (
+from rulespec_validators.upstream import GitHubIssueManager as UpstreamGitHubIssueManager
+from rulespec_validators.upstream.github import (
     VALIDATOR_REPOS,
     GitHubIssueManager,
     IssueReport,

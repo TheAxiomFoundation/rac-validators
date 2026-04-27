@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cosilico_validators.validators.base import TestCase
-from cosilico_validators.validators.taxsim import (
+from rulespec_validators.validators.base import TestCase
+from rulespec_validators.validators.taxsim import (
     TaxsimValidator,
 )
 
@@ -37,7 +37,7 @@ class TestResolvePathLocal:
             exe_name = "taxsim35-unix.exe"
 
         # Create a fake executable in the home-based search path
-        taxsim_dir = tmp_path / ".cosilico" / "taxsim"
+        taxsim_dir = tmp_path / ".rulespec" / "taxsim"
         taxsim_dir.mkdir(parents=True)
         exe_file = taxsim_dir / exe_name
         exe_file.write_text("fake")

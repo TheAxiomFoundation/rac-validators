@@ -1,4 +1,4 @@
-"""Tests for record-by-record Cosilico vs PolicyEngine comparison.
+"""Tests for record-by-record RuleSpec vs PolicyEngine comparison.
 
 TDD: Write tests first for what the harness should do.
 """
@@ -10,17 +10,17 @@ import pytest
 
 
 class TestRecordComparison:
-    """Test record-by-record comparison of Cosilico vs PolicyEngine."""
+    """Test record-by-record comparison of RuleSpec vs PolicyEngine."""
 
     def test_comparison_returns_match_rate(self):
         """Comparison should return match rate between 0 and 1."""
-        from cosilico_validators.comparison import compare_records
+        from rulespec_validators.comparison import compare_records
 
-        # Mock: 100 records, Cosilico matches PE exactly
-        cosilico_values = np.array([100.0, 200.0, 300.0, 0.0, 500.0])
+        # Mock: 100 records, RuleSpec matches PE exactly
+        rulespec_values = np.array([100.0, 200.0, 300.0, 0.0, 500.0])
         pe_values = np.array([100.0, 200.0, 300.0, 0.0, 500.0])
 
-        result = compare_records(cosilico_values, pe_values, tolerance=1.0)
+        result = compare_records(rulespec_values, pe_values, tolerance=1.0)
 
         assert result["match_rate"] == 1.0
         assert result["n_records"] == 5
@@ -28,23 +28,23 @@ class TestRecordComparison:
 
     def test_comparison_with_small_differences(self):
         """Small differences within tolerance should still match."""
-        from cosilico_validators.comparison import compare_records
+        from rulespec_validators.comparison import compare_records
 
-        cosilico_values = np.array([100.0, 200.5, 300.0])
+        rulespec_values = np.array([100.0, 200.5, 300.0])
         pe_values = np.array([100.0, 200.0, 300.5])  # 0.5 diff
 
-        result = compare_records(cosilico_values, pe_values, tolerance=1.0)
+        result = compare_records(rulespec_values, pe_values, tolerance=1.0)
 
         assert result["match_rate"] == 1.0  # All within $1 tolerance
 
     def test_comparison_with_mismatches(self):
         """Differences beyond tolerance should be mismatches."""
-        from cosilico_validators.comparison import compare_records
+        from rulespec_validators.comparison import compare_records
 
-        cosilico_values = np.array([100.0, 200.0, 300.0, 400.0])
+        rulespec_values = np.array([100.0, 200.0, 300.0, 400.0])
         pe_values = np.array([100.0, 220.0, 300.0, 450.0])  # 2 mismatches
 
-        result = compare_records(cosilico_values, pe_values, tolerance=10.0)
+        result = compare_records(rulespec_values, pe_values, tolerance=10.0)
 
         assert result["match_rate"] == 0.5  # 2/4 match
         assert result["n_mismatches"] == 2
@@ -52,12 +52,12 @@ class TestRecordComparison:
 
     def test_comparison_returns_error_distribution(self):
         """Should return percentiles of absolute errors."""
-        from cosilico_validators.comparison import compare_records
+        from rulespec_validators.comparison import compare_records
 
-        cosilico_values = np.array([100.0, 110.0, 120.0, 130.0, 200.0])
+        rulespec_values = np.array([100.0, 110.0, 120.0, 130.0, 200.0])
         pe_values = np.array([100.0, 100.0, 100.0, 100.0, 100.0])
 
-        result = compare_records(cosilico_values, pe_values, tolerance=5.0)
+        result = compare_records(rulespec_values, pe_values, tolerance=5.0)
 
         assert "error_percentiles" in result
         assert "p50" in result["error_percentiles"]
@@ -66,19 +66,19 @@ class TestRecordComparison:
 
     def test_comparison_identifies_worst_mismatches(self):
         """Should return indices and values of worst mismatches."""
-        from cosilico_validators.comparison import compare_records
+        from rulespec_validators.comparison import compare_records
 
-        cosilico_values = np.array([100.0, 200.0, 1000.0, 400.0])  # idx 2 is way off
+        rulespec_values = np.array([100.0, 200.0, 1000.0, 400.0])  # idx 2 is way off
         pe_values = np.array([100.0, 200.0, 300.0, 400.0])
 
-        result = compare_records(cosilico_values, pe_values, tolerance=10.0, top_n_mismatches=3)
+        result = compare_records(rulespec_values, pe_values, tolerance=10.0, top_n_mismatches=3)
 
         assert "worst_mismatches" in result
         assert len(result["worst_mismatches"]) >= 1
         # Worst mismatch should be index 2 with diff of 700
         worst = result["worst_mismatches"][0]
         assert worst["index"] == 2
-        assert worst["cosilico"] == 1000.0
+        assert worst["rulespec"] == 1000.0
         assert worst["policyengine"] == 300.0
         assert worst["difference"] == 700.0
 
@@ -88,11 +88,11 @@ class TestCPSComparison:
 
     def test_load_pe_values_for_variable(self):
         """Should load PolicyEngine values for a variable across CPS."""
-        from cosilico_validators.comparison import load_pe_values
+        from rulespec_validators.comparison import load_pe_values
 
         with (
-            patch("cosilico_validators.comparison.core.HAS_POLICYENGINE", True),
-            patch("cosilico_validators.comparison.core.Microsimulation") as mock_sim,
+            patch("rulespec_validators.comparison.core.HAS_POLICYENGINE", True),
+            patch("rulespec_validators.comparison.core.Microsimulation") as mock_sim,
         ):
             mock_instance = MagicMock()
             mock_sim.return_value = mock_instance
@@ -103,19 +103,19 @@ class TestCPSComparison:
             assert len(values) == 3
             mock_instance.calculate.assert_called_with("income_tax", 2024)
 
-    def test_load_cosilico_values_for_variable(self, tmp_path):
-        """Should load Cosilico-computed values for a variable across CPS."""
+    def test_load_rulespec_values_for_variable(self, tmp_path):
+        """Should load RuleSpec-computed values for a variable across CPS."""
         import pandas as pd
 
-        from cosilico_validators.comparison import load_cosilico_values
+        from rulespec_validators.comparison import load_rulespec_values
 
         # Create data sources directory
-        data_dir = tmp_path / "CosilicoAI" / "cosilico-data-sources" / "micro" / "us"
+        data_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
         data_dir.mkdir(parents=True)
 
         mock_df = pd.DataFrame(
             {
-                "cos_income_tax": [100.0, 200.0, 300.0],
+                "rulespec_income_tax": [100.0, 200.0, 300.0],
                 "tax_unit_id": [1, 2, 3],
             }
         )
@@ -126,18 +126,18 @@ class TestCPSComparison:
                 "sys.modules",
                 {
                     "tax_unit_builder": MagicMock(),
-                    "cosilico_runner": MagicMock(),
+                    "rulespec_runner": MagicMock(),
                 },
             ),
         ):
             import sys
 
             mock_builder = sys.modules["tax_unit_builder"]
-            mock_runner = sys.modules["cosilico_runner"]
+            mock_runner = sys.modules["rulespec_runner"]
             mock_builder.load_and_build_tax_units.return_value = mock_df
             mock_runner.run_all_calculations.return_value = mock_df
 
-            values = load_cosilico_values("income_tax", year=2024)
+            values = load_rulespec_values("income_tax", year=2024)
 
             assert len(values) == 3
             mock_builder.load_and_build_tax_units.assert_called_with(2024)
@@ -145,15 +145,15 @@ class TestCPSComparison:
 
     def test_run_comparison_for_variable(self):
         """Should run full comparison for a single variable."""
-        from cosilico_validators.comparison import run_variable_comparison
+        from rulespec_validators.comparison import run_variable_comparison
 
         with (
-            patch("cosilico_validators.comparison.core.load_pe_values") as mock_pe,
-            patch("cosilico_validators.comparison.core.load_cosilico_values") as mock_cos,
+            patch("rulespec_validators.comparison.core.load_pe_values") as mock_pe,
+            patch("rulespec_validators.comparison.core.load_rulespec_values") as mock_rulespec,
         ):
             # Return (values, ids) tuples since return_ids=True
             mock_pe.return_value = (np.array([100.0, 200.0, 300.0]), np.array([1, 2, 3]))
-            mock_cos.return_value = (np.array([100.0, 200.0, 300.0]), np.array([1, 2, 3]))
+            mock_rulespec.return_value = (np.array([100.0, 200.0, 300.0]), np.array([1, 2, 3]))
 
             result = run_variable_comparison("income_tax", year=2024)
 
@@ -167,7 +167,7 @@ class TestComparisonDashboard:
 
     def test_dashboard_json_structure(self):
         """Dashboard JSON should have required structure."""
-        from cosilico_validators.comparison import generate_dashboard_json
+        from rulespec_validators.comparison import generate_dashboard_json
 
         results = [
             {
@@ -193,7 +193,7 @@ class TestComparisonDashboard:
 
     def test_dashboard_includes_overall_summary(self):
         """Dashboard should include overall summary stats."""
-        from cosilico_validators.comparison import generate_dashboard_json
+        from rulespec_validators.comparison import generate_dashboard_json
 
         results = [
             {"variable": "v1", "match_rate": 0.90, "n_records": 100, "mean_absolute_error": 10.0},

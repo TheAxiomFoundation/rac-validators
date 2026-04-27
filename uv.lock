@@ -212,7 +212,7 @@ wheels = [
 ]
 
 [[package]]
-name = "cosilico-validators"
+name = "rulespec-validators"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
@@ -250,7 +250,7 @@ psl = [
 requires-dist = [
     { name = "behresp", marker = "extra == 'psl'", specifier = ">=0.10" },
     { name = "click", specifier = ">=8.0" },
-    { name = "cosilico-validators", extras = ["policyengine", "psl"], marker = "extra == 'all'" },
+    { name = "rulespec-validators", extras = ["policyengine", "psl"], marker = "extra == 'all'" },
     { name = "numpy", specifier = ">=1.24" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "policyengine-core", marker = "extra == 'policyengine'", specifier = ">=3.20" },

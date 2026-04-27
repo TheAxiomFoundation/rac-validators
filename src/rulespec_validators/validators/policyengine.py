@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from cosilico_validators.validators.base import (
+from rulespec_validators.validators.base import (
     BaseValidator,
     TestCase,
     ValidatorResult,
@@ -54,7 +54,7 @@ class PolicyEngineValidator(BaseValidator):
                 self._simulation_class = Simulation
             except ImportError as e:
                 raise ImportError(
-                    "policyengine-us not installed. Install with: pip install cosilico-validators[policyengine]"
+                    "policyengine-us not installed. Install with: pip install rulespec-validators[policyengine]"
                 ) from e
         return self._simulation_class
 

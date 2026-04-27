@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from cosilico_validators.comparison.cps import (
+from rulespec_validators.comparison.cps import (
     COMPARISON_VARIABLES,
     ComparisonTotals,
     ModelResult,
@@ -21,7 +21,7 @@ class TestConstants:
     def test_comparison_variables_have_required_keys(self):
         for _name, config in COMPARISON_VARIABLES.items():
             assert "title" in config
-            assert "cosilico_col" in config
+            assert "rulespec_col" in config
             assert "pe_var" in config
 
 
@@ -44,17 +44,17 @@ class TestModelResult:
 class TestComparisonTotals:
     def test_creation(self):
         models = {
-            "cosilico": ModelResult(name="cosilico", total=60e9, n_records=100000, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=60e9, n_records=100000, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=62e9, n_records=100000, time_ms=200.0),
         }
         ct = ComparisonTotals(variable="eitc", title="EITC", models=models)
         assert ct.variable == "eitc"
-        assert ct.cosilico_total == 60e9
+        assert ct.rulespec_total == 60e9
         assert ct.policyengine_total == 62e9
 
     def test_difference(self):
         models = {
-            "cosilico": ModelResult(name="cosilico", total=60e9, n_records=100000, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=60e9, n_records=100000, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=62e9, n_records=100000, time_ms=200.0),
         }
         ct = ComparisonTotals(variable="eitc", title="EITC", models=models)
@@ -62,7 +62,7 @@ class TestComparisonTotals:
 
     def test_percent_difference(self):
         models = {
-            "cosilico": ModelResult(name="cosilico", total=60e9, n_records=100000, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=60e9, n_records=100000, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=62e9, n_records=100000, time_ms=200.0),
         }
         ct = ComparisonTotals(variable="eitc", title="EITC", models=models)
@@ -71,7 +71,7 @@ class TestComparisonTotals:
 
     def test_percent_difference_zero_pe(self):
         models = {
-            "cosilico": ModelResult(name="cosilico", total=100, n_records=10, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=100, n_records=10, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=0, n_records=10, time_ms=50.0),
         }
         ct = ComparisonTotals(variable="test", title="Test", models=models)
@@ -83,7 +83,7 @@ class TestComparisonTotals:
 
     def test_n_records(self):
         models = {
-            "cosilico": ModelResult(name="cosilico", total=60e9, n_records=100000, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=60e9, n_records=100000, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=62e9, n_records=90000, time_ms=200.0),
         }
         ct = ComparisonTotals(variable="test", title="Test", models=models)
@@ -102,7 +102,7 @@ class TestComparisonTotals:
 
     def test_match_rate(self):
         models = {
-            "cosilico": ModelResult(name="cosilico", total=100, n_records=10, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=100, n_records=10, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=100, n_records=10, time_ms=100.0),
         }
         ct = ComparisonTotals(variable="test", title="Test", models=models)
@@ -112,11 +112,11 @@ class TestComparisonTotals:
 
     def test_model_time_via_models_dict(self):
         models = {
-            "cosilico": ModelResult(name="cosilico", total=100, n_records=10, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=100, n_records=10, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=100, n_records=10, time_ms=200.0),
         }
         ct = ComparisonTotals(variable="test", title="Test", models=models)
-        assert ct.models["cosilico"].time_ms == 50.0
+        assert ct.models["rulespec"].time_ms == 50.0
         assert ct.models["policyengine"].time_ms == 200.0
 
 
@@ -126,23 +126,23 @@ class TestLoadVariableMappings:
         assert isinstance(mappings, dict)
         assert len(mappings) > 0
 
-    def test_mappings_have_cosilico_col(self):
+    def test_mappings_have_rulespec_col(self):
         mappings = load_variable_mappings()
         for _name, config in mappings.items():
-            assert "cosilico_col" in config
+            assert "rulespec_col" in config
 
 
-class TestLoadCosilicoSources:
+class TestLoadRuleSpecSources:
     def test_load_fails_without_module(self):
-        from cosilico_validators.comparison.cps import load_cosilico_cps
+        from rulespec_validators.comparison.cps import load_rulespec_cps
 
         with pytest.raises((ImportError, ModuleNotFoundError)):
-            load_cosilico_cps(year=2024)
+            load_rulespec_cps(year=2024)
 
 
 class TestCompareCpsTotals:
-    def test_compare_with_cosilico_only(self):
-        from cosilico_validators.comparison.cps import compare_cps_totals
+    def test_compare_with_rulespec_only(self):
+        from rulespec_validators.comparison.cps import compare_cps_totals
 
         mock_timed = TimedResult(
             data={
@@ -151,17 +151,17 @@ class TestCompareCpsTotals:
             },
             elapsed_ms=50.0,
         )
-        with patch("cosilico_validators.comparison.cps.load_cosilico_cps", return_value=mock_timed):
+        with patch("rulespec_validators.comparison.cps.load_rulespec_cps", return_value=mock_timed):
             result = compare_cps_totals(
                 year=2024,
                 variables=["eitc"],
-                models=["cosilico"],
+                models=["rulespec"],
             )
             assert isinstance(result, dict)
             assert "eitc" in result
 
-    def test_compare_with_pe_and_cosilico(self):
-        from cosilico_validators.comparison.cps import compare_cps_totals
+    def test_compare_with_pe_and_rulespec(self):
+        from rulespec_validators.comparison.cps import compare_cps_totals
 
         mock_timed = TimedResult(
             data={
@@ -171,20 +171,20 @@ class TestCompareCpsTotals:
             elapsed_ms=50.0,
         )
         with (
-            patch("cosilico_validators.comparison.cps.load_cosilico_cps", return_value=mock_timed),
-            patch("cosilico_validators.comparison.cps.load_policyengine_values", return_value=mock_timed),
+            patch("rulespec_validators.comparison.cps.load_rulespec_cps", return_value=mock_timed),
+            patch("rulespec_validators.comparison.cps.load_policyengine_values", return_value=mock_timed),
         ):
             result = compare_cps_totals(
                 year=2024,
                 variables=["eitc"],
-                models=["cosilico", "policyengine"],
+                models=["rulespec", "policyengine"],
             )
             assert "eitc" in result
-            assert result["eitc"].cosilico_total > 0
+            assert result["eitc"].rulespec_total > 0
             assert result["eitc"].policyengine_total > 0
 
     def test_compare_with_all_models(self):
-        from cosilico_validators.comparison.cps import compare_cps_totals
+        from rulespec_validators.comparison.cps import compare_cps_totals
 
         mock_timed = TimedResult(
             data={
@@ -194,63 +194,63 @@ class TestCompareCpsTotals:
             elapsed_ms=50.0,
         )
         with (
-            patch("cosilico_validators.comparison.cps.load_cosilico_cps", return_value=mock_timed),
-            patch("cosilico_validators.comparison.cps.load_policyengine_values", return_value=mock_timed),
-            patch("cosilico_validators.comparison.cps.load_taxcalc_values", return_value=mock_timed),
-            patch("cosilico_validators.comparison.cps.load_taxsim_values", return_value=mock_timed),
+            patch("rulespec_validators.comparison.cps.load_rulespec_cps", return_value=mock_timed),
+            patch("rulespec_validators.comparison.cps.load_policyengine_values", return_value=mock_timed),
+            patch("rulespec_validators.comparison.cps.load_taxcalc_values", return_value=mock_timed),
+            patch("rulespec_validators.comparison.cps.load_taxsim_values", return_value=mock_timed),
         ):
             result = compare_cps_totals(year=2024, variables=["eitc"])
             assert "eitc" in result
-            assert result["eitc"].cosilico_total > 0
+            assert result["eitc"].rulespec_total > 0
 
     def test_compare_pe_import_error(self):
-        from cosilico_validators.comparison.cps import compare_cps_totals
+        from rulespec_validators.comparison.cps import compare_cps_totals
 
         mock_timed = TimedResult(
             data={"weight": np.array([1.0]), "eitc": np.array([500.0])},
             elapsed_ms=50.0,
         )
         with (
-            patch("cosilico_validators.comparison.cps.load_cosilico_cps", return_value=mock_timed),
-            patch("cosilico_validators.comparison.cps.load_policyengine_values", side_effect=ImportError("no PE")),
-            patch("cosilico_validators.comparison.cps.load_taxcalc_values", side_effect=ImportError("no TC")),
-            patch("cosilico_validators.comparison.cps.load_taxsim_values", side_effect=Exception("no TAXSIM")),
+            patch("rulespec_validators.comparison.cps.load_rulespec_cps", return_value=mock_timed),
+            patch("rulespec_validators.comparison.cps.load_policyengine_values", side_effect=ImportError("no PE")),
+            patch("rulespec_validators.comparison.cps.load_taxcalc_values", side_effect=ImportError("no TC")),
+            patch("rulespec_validators.comparison.cps.load_taxsim_values", side_effect=Exception("no TAXSIM")),
         ):
             result = compare_cps_totals(year=2024, variables=["eitc"])
             assert "eitc" in result
-            # Only cosilico should be present
-            assert "cosilico" in result["eitc"].models
+            # Only rulespec should be present
+            assert "rulespec" in result["eitc"].models
 
     def test_compare_default_variables(self):
-        from cosilico_validators.comparison.cps import compare_cps_totals
+        from rulespec_validators.comparison.cps import compare_cps_totals
 
         mock_data = {"weight": np.array([1.0])}
         for var in COMPARISON_VARIABLES:
             mock_data[var] = np.array([100.0])
         mock_timed = TimedResult(data=mock_data, elapsed_ms=50.0)
-        with patch("cosilico_validators.comparison.cps.load_cosilico_cps", return_value=mock_timed):
-            result = compare_cps_totals(year=2024, models=["cosilico"])
+        with patch("rulespec_validators.comparison.cps.load_rulespec_cps", return_value=mock_timed):
+            result = compare_cps_totals(year=2024, models=["rulespec"])
             assert len(result) > 0
 
 
 class TestExportToDashboard:
     def test_export_hits_attribute_error(self):
-        """export_to_dashboard references cosilico_time_ms which doesn't exist on ComparisonTotals."""
-        from cosilico_validators.comparison.cps import export_to_dashboard
+        """export_to_dashboard references rulespec_time_ms which doesn't exist on ComparisonTotals."""
+        from rulespec_validators.comparison.cps import export_to_dashboard
 
         models = {
-            "cosilico": ModelResult(name="cosilico", total=60e9, n_records=100000, time_ms=50.0),
+            "rulespec": ModelResult(name="rulespec", total=60e9, n_records=100000, time_ms=50.0),
             "policyengine": ModelResult(name="policyengine", total=62e9, n_records=100000, time_ms=200.0),
         }
         comparison = {
             "eitc": ComparisonTotals(variable="eitc", title="EITC", models=models),
         }
-        # The function references totals.cosilico_time_ms which is not defined
+        # The function references totals.rulespec_time_ms which is not defined
         with pytest.raises(AttributeError):
             export_to_dashboard(comparison, year=2024)
 
     def test_export_empty(self):
-        from cosilico_validators.comparison.cps import export_to_dashboard
+        from rulespec_validators.comparison.cps import export_to_dashboard
 
         result = export_to_dashboard({}, year=2024)
         assert result["overall"]["match_rate"] == 0
@@ -259,11 +259,11 @@ class TestExportToDashboard:
 
 class TestGenerateReport:
     def test_generate_with_mocked_data(self):
-        from cosilico_validators.comparison.cps import generate_report
+        from rulespec_validators.comparison.cps import generate_report
 
-        with patch("cosilico_validators.comparison.cps.compare_cps_totals") as mock_compare:
+        with patch("rulespec_validators.comparison.cps.compare_cps_totals") as mock_compare:
             models = {
-                "cosilico": ModelResult(name="cosilico", total=60e9, n_records=100000, time_ms=50.0),
+                "rulespec": ModelResult(name="rulespec", total=60e9, n_records=100000, time_ms=50.0),
                 "policyengine": ModelResult(name="policyengine", total=62e9, n_records=100000, time_ms=200.0),
             }
             mock_compare.return_value = {
@@ -272,7 +272,7 @@ class TestGenerateReport:
             report = generate_report(year=2024)
             assert isinstance(report, str)
             assert "EITC" in report
-            assert "cosilico" in report
+            assert "rulespec" in report
             assert "policyengine" in report
             assert "Records per model" in report
             assert "Performance (ms)" in report
@@ -280,9 +280,9 @@ class TestGenerateReport:
 
 class TestMain:
     def test_main_calls_generate_report(self):
-        from cosilico_validators.comparison.cps import main
+        from rulespec_validators.comparison.cps import main
 
-        with patch("cosilico_validators.comparison.cps.generate_report", return_value="test report"):
+        with patch("rulespec_validators.comparison.cps.generate_report", return_value="test report"):
             main()
 
 
@@ -290,7 +290,7 @@ class TestLoadPolicyengineValues:
     def test_requires_policyengine(self):
         import sys
 
-        from cosilico_validators.comparison.cps import load_policyengine_values
+        from rulespec_validators.comparison.cps import load_policyengine_values
 
         with patch.dict(sys.modules, {"policyengine_us": None}), pytest.raises(ImportError):
             load_policyengine_values(year=2024)
@@ -309,7 +309,7 @@ class TestLoadPolicyengineValues:
 
         with patch.dict(sys.modules, {"policyengine_us": mock_pe}):
             # Need to reimport to get fresh function
-            from cosilico_validators.comparison.cps import load_policyengine_values
+            from rulespec_validators.comparison.cps import load_policyengine_values
 
             result = load_policyengine_values(year=2024, variables=["eitc"])
             assert isinstance(result, TimedResult)
@@ -348,7 +348,7 @@ class TestLoadPolicyengineValues:
                 {"eitc": {**COMPARISON_VARIABLES.get("eitc", {}), "pe_entity": "person"}},
             ),
         ):
-            from cosilico_validators.comparison.cps import load_policyengine_values
+            from rulespec_validators.comparison.cps import load_policyengine_values
 
             result = load_policyengine_values(year=2024, variables=["eitc"])
             assert "eitc" in result.data
@@ -368,7 +368,7 @@ class TestLoadPolicyengineValues:
 
         mock_sim.calculate.side_effect = mock_calculate
         with patch.dict(sys.modules, {"policyengine_us": mock_pe}):
-            from cosilico_validators.comparison.cps import load_policyengine_values
+            from rulespec_validators.comparison.cps import load_policyengine_values
 
             result = load_policyengine_values(year=2024, variables=["eitc"])
             assert "eitc" in result.data
@@ -384,7 +384,7 @@ class TestLoadPolicyengineValues:
         mock_sim.calculate.return_value = np.array([100.0, 200.0])
 
         with patch.dict(sys.modules, {"policyengine_us": mock_pe}):
-            from cosilico_validators.comparison.cps import load_policyengine_values
+            from rulespec_validators.comparison.cps import load_policyengine_values
 
             result = load_policyengine_values(year=2024)
             assert "weight" in result.data
@@ -399,7 +399,7 @@ class TestLoadPolicyengineValues:
         mock_sim.calculate.return_value = np.array([100.0])
 
         with patch.dict(sys.modules, {"policyengine_us": mock_pe}):
-            from cosilico_validators.comparison.cps import load_policyengine_values
+            from rulespec_validators.comparison.cps import load_policyengine_values
 
             result = load_policyengine_values(year=2024, variables=["nonexistent_var_xyz"])
             assert "nonexistent_var_xyz" not in result.data
@@ -407,7 +407,7 @@ class TestLoadPolicyengineValues:
 
 class TestLoadTaxcalcValues:
     def test_requires_taxcalc(self):
-        from cosilico_validators.comparison.cps import load_taxcalc_values
+        from rulespec_validators.comparison.cps import load_taxcalc_values
 
         with pytest.raises(ImportError):
             load_taxcalc_values(year=2024)
@@ -424,7 +424,7 @@ class TestLoadTaxcalcValues:
         mock_calc.array.return_value = np.array([100.0, 200.0])
 
         with patch.dict(sys.modules, {"taxcalc": mock_tc}):
-            from cosilico_validators.comparison.cps import load_taxcalc_values
+            from rulespec_validators.comparison.cps import load_taxcalc_values
 
             result = load_taxcalc_values(year=2024, variables=["eitc"])
             assert isinstance(result, TimedResult)
@@ -450,7 +450,7 @@ class TestLoadTaxcalcValues:
 
         mock_calc.array.side_effect = mock_array
         with patch.dict(sys.modules, {"taxcalc": mock_tc}):
-            from cosilico_validators.comparison.cps import load_taxcalc_values
+            from rulespec_validators.comparison.cps import load_taxcalc_values
 
             result = load_taxcalc_values(year=2024, variables=["eitc"])
             assert "eitc" in result.data
@@ -467,15 +467,15 @@ class TestLoadTaxcalcValues:
         mock_calc.array.return_value = np.array([100.0])
 
         with patch.dict(sys.modules, {"taxcalc": mock_tc}):
-            from cosilico_validators.comparison.cps import load_taxcalc_values
+            from rulespec_validators.comparison.cps import load_taxcalc_values
 
             result = load_taxcalc_values(year=2024)
             assert "weight" in result.data
 
 
 class TestLoadTaxsimValues:
-    def test_requires_cosilico_data(self):
-        from cosilico_validators.comparison.cps import load_taxsim_values
+    def test_requires_rulespec_data(self):
+        from rulespec_validators.comparison.cps import load_taxsim_values
 
         with pytest.raises((ImportError, ModuleNotFoundError)):
             load_taxsim_values(year=2024)
@@ -500,11 +500,11 @@ class TestLoadTaxsimValues:
 
         with (
             patch(
-                "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+                "rulespec_validators.comparison.cps._load_rulespec_data_sources",
                 return_value=(mock_builder, mock_runner),
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
         ):
@@ -512,7 +512,7 @@ class TestLoadTaxsimValues:
             mock_result.returncode = 0
             mock_result.stdout = "taxsimid,year,v25\n1,2024,600.00\n2,2024,0.00"
             with patch("subprocess.run", return_value=mock_result):
-                from cosilico_validators.comparison.cps import load_taxsim_values
+                from rulespec_validators.comparison.cps import load_taxsim_values
 
                 result = load_taxsim_values(year=2024, variables=["eitc"])
                 assert isinstance(result, TimedResult)
@@ -538,11 +538,11 @@ class TestLoadTaxsimValues:
 
         with (
             patch(
-                "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+                "rulespec_validators.comparison.cps._load_rulespec_data_sources",
                 return_value=(mock_builder, mock_runner),
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
         ):
@@ -550,7 +550,7 @@ class TestLoadTaxsimValues:
             mock_result.returncode = 1
             mock_result.stderr = "TAXSIM error"
             with patch("subprocess.run", return_value=mock_result):
-                from cosilico_validators.comparison.cps import load_taxsim_values
+                from rulespec_validators.comparison.cps import load_taxsim_values
 
                 with pytest.raises(RuntimeError, match="TAXSIM failed"):
                     load_taxsim_values(year=2024, variables=["eitc"])
@@ -575,11 +575,11 @@ class TestLoadTaxsimValues:
 
         with (
             patch(
-                "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+                "rulespec_validators.comparison.cps._load_rulespec_data_sources",
                 return_value=(mock_builder, mock_runner),
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
         ):
@@ -587,21 +587,21 @@ class TestLoadTaxsimValues:
             mock_result.returncode = 0
             mock_result.stdout = "taxsimid,year,v25\n1,2024,0.00"
             with patch("subprocess.run", return_value=mock_result):
-                from cosilico_validators.comparison.cps import load_taxsim_values
+                from rulespec_validators.comparison.cps import load_taxsim_values
 
                 result = load_taxsim_values(year=2024, variables=["eitc"])
                 assert isinstance(result, TimedResult)
 
 
-class TestLoadCosilicoDataSources:
+class TestLoadRuleSpecDataSources:
     def test_requires_modules(self):
-        from cosilico_validators.comparison.cps import _load_cosilico_data_sources
+        from rulespec_validators.comparison.cps import _load_rulespec_data_sources
 
         with pytest.raises((ImportError, ModuleNotFoundError)):
-            _load_cosilico_data_sources()
+            _load_rulespec_data_sources()
 
     def test_load_success_with_mock(self):
-        """Test _load_cosilico_data_sources with mocked modules."""
+        """Test _load_rulespec_data_sources with mocked modules."""
         import sys
 
         mock_builder = MagicMock()
@@ -613,19 +613,19 @@ class TestLoadCosilicoDataSources:
                 sys.modules,
                 {
                     "tax_unit_builder": mock_builder,
-                    "cosilico_runner": mock_runner,
+                    "rulespec_runner": mock_runner,
                 },
             ),
         ):
-            from cosilico_validators.comparison.cps import _load_cosilico_data_sources
+            from rulespec_validators.comparison.cps import _load_rulespec_data_sources
 
-            result = _load_cosilico_data_sources()
+            result = _load_rulespec_data_sources()
             assert len(result) == 2
 
 
-class TestLoadCosilicoCps:
+class TestLoadRuleSpecCps:
     def test_load_success_with_mock(self):
-        """Test full body of load_cosilico_cps with mocked deps."""
+        """Test full body of load_rulespec_cps with mocked deps."""
         import pandas as pd
 
         mock_builder = MagicMock()
@@ -637,19 +637,19 @@ class TestLoadCosilicoCps:
         )
         # Add columns for all comparison variables
         for _var_name, config in COMPARISON_VARIABLES.items():
-            col = config["cosilico_col"]
+            col = config["rulespec_col"]
             mock_df[col] = [100.0, 200.0]
 
         mock_builder.return_value = mock_df
         mock_runner.return_value = mock_df
 
         with patch(
-            "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+            "rulespec_validators.comparison.cps._load_rulespec_data_sources",
             return_value=(mock_builder, mock_runner),
         ):
-            from cosilico_validators.comparison.cps import load_cosilico_cps
+            from rulespec_validators.comparison.cps import load_rulespec_cps
 
-            result = load_cosilico_cps(year=2024)
+            result = load_rulespec_cps(year=2024)
             assert isinstance(result, TimedResult)
             assert "weight" in result.data
             assert result.elapsed_ms >= 0
@@ -669,12 +669,12 @@ class TestLoadCosilicoCps:
         mock_runner.return_value = mock_df
 
         with patch(
-            "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+            "rulespec_validators.comparison.cps._load_rulespec_data_sources",
             return_value=(mock_builder, mock_runner),
         ):
-            from cosilico_validators.comparison.cps import load_cosilico_cps
+            from rulespec_validators.comparison.cps import load_rulespec_cps
 
-            result = load_cosilico_cps(year=2024)
+            result = load_rulespec_cps(year=2024)
             # Variables with missing columns should be zero arrays
             for var_name in COMPARISON_VARIABLES:
                 assert var_name in result.data
@@ -684,7 +684,7 @@ class TestLoadCosilicoCps:
 class TestCompareCpsTotalsVariableNotInConfig:
     def test_variable_not_in_comparison_variables(self):
         """Test that variables not in COMPARISON_VARIABLES are skipped."""
-        from cosilico_validators.comparison.cps import compare_cps_totals
+        from rulespec_validators.comparison.cps import compare_cps_totals
 
         mock_timed = TimedResult(
             data={
@@ -693,11 +693,11 @@ class TestCompareCpsTotalsVariableNotInConfig:
             },
             elapsed_ms=50.0,
         )
-        with patch("cosilico_validators.comparison.cps.load_cosilico_cps", return_value=mock_timed):
+        with patch("rulespec_validators.comparison.cps.load_rulespec_cps", return_value=mock_timed):
             result = compare_cps_totals(
                 year=2024,
                 variables=["nonexistent_xyz"],
-                models=["cosilico"],
+                models=["rulespec"],
             )
             assert "nonexistent_xyz" not in result
 
@@ -725,11 +725,11 @@ class TestLoadTaxsimSafeConversions:
 
         with (
             patch(
-                "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+                "rulespec_validators.comparison.cps._load_rulespec_data_sources",
                 return_value=(mock_builder, mock_runner),
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
         ):
@@ -737,7 +737,7 @@ class TestLoadTaxsimSafeConversions:
             mock_result.returncode = 0
             mock_result.stdout = "taxsimid,year,v25\n1,2024,0.00"
             with patch("subprocess.run", return_value=mock_result):
-                from cosilico_validators.comparison.cps import load_taxsim_values
+                from rulespec_validators.comparison.cps import load_taxsim_values
 
                 result = load_taxsim_values(year=2024, variables=["eitc"])
                 assert isinstance(result, TimedResult)
@@ -762,11 +762,11 @@ class TestLoadTaxsimSafeConversions:
 
         with (
             patch(
-                "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+                "rulespec_validators.comparison.cps._load_rulespec_data_sources",
                 return_value=(mock_builder, mock_runner),
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
         ):
@@ -774,7 +774,7 @@ class TestLoadTaxsimSafeConversions:
             mock_result.returncode = 0
             mock_result.stdout = "taxsimid,year,v25,v22,actc\n1,2024,600.00,2000.00,500.00"
             with patch("subprocess.run", return_value=mock_result):
-                from cosilico_validators.comparison.cps import load_taxsim_values
+                from rulespec_validators.comparison.cps import load_taxsim_values
 
                 result = load_taxsim_values(year=2024)  # No variables specified
                 assert isinstance(result, TimedResult)
@@ -800,11 +800,11 @@ class TestLoadTaxsimSafeConversions:
 
         with (
             patch(
-                "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+                "rulespec_validators.comparison.cps._load_rulespec_data_sources",
                 return_value=(mock_builder, mock_runner),
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
         ):
@@ -812,7 +812,7 @@ class TestLoadTaxsimSafeConversions:
             mock_result.returncode = 0
             mock_result.stdout = "taxsimid,year,v25\n1,2024,600.00"
             with patch("subprocess.run", return_value=mock_result):
-                from cosilico_validators.comparison.cps import load_taxsim_values
+                from rulespec_validators.comparison.cps import load_taxsim_values
 
                 # Pass a variable that exists in COMPARISON_VARIABLES but whose ts_var
                 # is not in the output, plus one that doesn't exist at all
@@ -840,11 +840,11 @@ class TestLoadTaxsimSafeConversions:
 
         with (
             patch(
-                "cosilico_validators.comparison.cps._load_cosilico_data_sources",
+                "rulespec_validators.comparison.cps._load_rulespec_data_sources",
                 return_value=(mock_builder, mock_runner),
             ),
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
         ):
@@ -853,7 +853,7 @@ class TestLoadTaxsimSafeConversions:
             # Output only has v25 (eitc), missing ctc (v22)
             mock_result.stdout = "taxsimid,year,v25\n1,2024,600.00"
             with patch("subprocess.run", return_value=mock_result):
-                from cosilico_validators.comparison.cps import load_taxsim_values
+                from rulespec_validators.comparison.cps import load_taxsim_values
 
                 result = load_taxsim_values(year=2024, variables=["eitc", "ctc"])
                 assert result.data["ctc"][0] == 0.0  # Zeros fallback
@@ -872,7 +872,7 @@ class TestLoadTaxcalcSkipsUnknownVariable:
         mock_calc.array.return_value = np.array([100.0])
 
         with patch.dict(sys.modules, {"taxcalc": mock_tc}):
-            from cosilico_validators.comparison.cps import load_taxcalc_values
+            from rulespec_validators.comparison.cps import load_taxcalc_values
 
             result = load_taxcalc_values(year=2024, variables=["eitc", "nonexistent_xyz"])
             assert "nonexistent_xyz" not in result.data

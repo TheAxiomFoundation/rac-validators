@@ -21,7 +21,7 @@ import time
 from pathlib import Path
 from typing import Any, Literal
 
-from cosilico_validators.validators.base import (
+from rulespec_validators.validators.base import (
     BaseValidator,
     TestCase,
     ValidatorResult,
@@ -262,7 +262,7 @@ class TaxsimValidator(BaseValidator):
         search_paths = [
             Path(__file__).parent.parent.parent.parent / "resources" / "taxsim" / exe_name,
             Path.cwd() / "resources" / "taxsim" / exe_name,
-            Path.home() / ".cosilico" / "taxsim" / exe_name,
+            Path.home() / ".rulespec" / "taxsim" / exe_name,
         ]
 
         for path in search_paths:

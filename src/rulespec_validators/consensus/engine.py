@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from cosilico_validators.validators.base import (
+from rulespec_validators.validators.base import (
     BaseValidator,
     TestCase,
     ValidatorResult,

@@ -924,7 +924,7 @@ def generate_dashboard(comparisons: List[ComparisonResult], stats: Dict, cases: 
             "",
             "- [TAXSIM 35 Documentation](https://taxsim.nber.org/taxsim35/)",
             "- [PolicyEngine-US Documentation](https://policyengine.org/us/research)",
-            "- [Cosilico US Encodings](https://github.com/CosilicoAI/rules-us)",
+            "- [RuleSpec US Encodings](https://github.com/TheAxiomFoundation/rules-us)",
         ]
     )
 

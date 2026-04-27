@@ -1,6 +1,6 @@
-# cosilico-validators
+# rulespec-validators
 
-External validation framework for Cosilico DSL encodings.
+External validation framework for RuleSpec DSL encodings.
 
 ## Tests vs Validation
 
@@ -12,7 +12,7 @@ External validation framework for Cosilico DSL encodings.
 | Authority | Authoritative—our truth | Informational—tools may have bugs |
 | Approach | TDD—test-first development | Audit—report consistency |
 | Output | Pass/Fail | Comparison report with disagreements |
-| Location | `rules-us/26/32/tests/` | `cosilico-validators` |
+| Location | `rules-us/26/32/tests/` | `rulespec-validators` |
 
 Example validation output:
 ```
@@ -22,7 +22,7 @@ Agreement: 12/13 (92%)
 
 Disagreements:
 ┌─────────────────────┬──────────┬────────┬─────────────────────────────┐
-│ Case                │ Cosilico │ TAXSIM │ Explanation                 │
+│ Case                │ RuleSpec │ TAXSIM │ Explanation                 │
 ├─────────────────────┼──────────┼────────┼─────────────────────────────┤
 │ Childless, age 23   │ $0       │ $600   │ TAXSIM bug: ignores age req │
 │                     │          │        │ See: 26 USC § 32(c)(1)(A)   │
@@ -32,11 +32,11 @@ Disagreements:
 
 ## Overview
 
-`cosilico-validators` compares Cosilico calculations against external systems (TAXSIM, PolicyEngine, TaxAct) to generate **validation reports**. These reports document both agreements and disagreements—with statute citations explaining where we believe external tools are incorrect.
+`rulespec-validators` compares RuleSpec calculations against external systems (TAXSIM, PolicyEngine, TaxAct) to generate **validation reports**. These reports document both agreements and disagreements—with statute citations explaining where we believe external tools are incorrect.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     Cosilico DSL Test Cases                          │
+│                     RuleSpec DSL Test Cases                          │
 │                    (with expected values from statute)               │
 └──────────────────────────────┬──────────────────────────────────────┘
                                │
@@ -63,16 +63,16 @@ Disagreements:
 
 ```bash
 # Basic installation (TAXSIM only)
-pip install cosilico-validators
+pip install rulespec-validators
 
 # With PolicyEngine support
-pip install cosilico-validators[policyengine]
+pip install rulespec-validators[policyengine]
 
 # All validators
-pip install cosilico-validators[all]
+pip install rulespec-validators[all]
 
 # Development
-pip install cosilico-validators[dev]
+pip install rulespec-validators[dev]
 ```
 
 ## Quick Start
@@ -80,9 +80,9 @@ pip install cosilico-validators[dev]
 ### Python API
 
 ```python
-from cosilico_validators import ConsensusEngine, TestCase
-from cosilico_validators.validators.policyengine import PolicyEngineValidator
-from cosilico_validators.validators.taxsim import TaxsimValidator
+from rulespec_validators import ConsensusEngine, TestCase
+from rulespec_validators.validators.policyengine import PolicyEngineValidator
+from rulespec_validators.validators.taxsim import TaxsimValidator
 
 # Create validators
 validators = [
@@ -128,23 +128,23 @@ if result.potential_bugs:
 
 ```bash
 # Validate test cases
-cosilico-validators validate tests.yaml --variable eitc --year 2024
+rulespec-validators validate tests.yaml --variable eitc --year 2024
 
 # With Claude confidence for bug detection
-cosilico-validators validate tests.yaml -v eitc --claude-confidence 0.95
+rulespec-validators validate tests.yaml -v eitc --claude-confidence 0.95
 
 # Save results to JSON
-cosilico-validators validate tests.yaml -v eitc -o results.json
+rulespec-validators validate tests.yaml -v eitc -o results.json
 
 # List available validators
-cosilico-validators validators
+rulespec-validators validators
 
 # File issues for potential bugs (dry run)
-cosilico-validators file-issues results.json --dry-run
+rulespec-validators file-issues results.json --dry-run
 
 # Actually file issues
 export GITHUB_TOKEN=your_token
-cosilico-validators file-issues results.json --repo PolicyEngine/policyengine-us
+rulespec-validators file-issues results.json --repo PolicyEngine/policyengine-us
 ```
 
 ## Consensus Levels
@@ -181,7 +181,7 @@ When Claude is highly confident (>90%) but validators disagree with the expected
 3. Issues can be auto-filed to GitHub
 
 ```python
-from cosilico_validators.upstream import GitHubIssueManager
+from rulespec_validators.upstream import GitHubIssueManager
 
 manager = GitHubIssueManager(token="github_token")
 results = manager.file_all_bugs(
@@ -233,8 +233,8 @@ test_cases:
 
 ```bash
 # Clone the repo
-git clone https://github.com/CosilicoAI/cosilico-validators.git
-cd cosilico-validators
+git clone https://github.com/TheAxiomFoundation/rulespec-validators.git
+cd rulespec-validators
 
 # Install with dev dependencies
 pip install -e ".[dev,policyengine]"
@@ -249,8 +249,8 @@ mypy src/
 ## Architecture
 
 ```
-cosilico-validators/
-├── src/cosilico_validators/
+rulespec-validators/
+├── src/rulespec_validators/
 │   ├── validators/           # Validator implementations
 │   │   ├── base.py          # BaseValidator, TestCase, ValidatorResult
 │   │   ├── policyengine.py  # PolicyEngine US integration
@@ -266,7 +266,7 @@ cosilico-validators/
 
 ## Related Projects
 
-- [cosilico-lawarchive](https://github.com/CosilicoAI/cosilico-lawarchive) - Statute encoding pipeline
+- [rulespec-lawarchive](https://github.com/TheAxiomFoundation/rulespec-lawarchive) - Statute encoding pipeline
 - [policyengine-us](https://github.com/PolicyEngine/policyengine-us) - US tax-benefit microsimulation
 - [TAXSIM](https://taxsim.nber.org/taxsim35/) - NBER tax calculator
 - [PSL Tax-Calculator](https://github.com/PSLmodels/Tax-Calculator) - Policy Simulation Library

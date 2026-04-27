@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "cosilico-validators"
+name = "rulespec-validators"
 version = "0.1.0"
-description = "Multi-system tax/benefit validation for Cosilico DSL encodings"
+description = "Multi-system tax/benefit validation for RuleSpec DSL encodings"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
-    {name = "Cosilico", email = "hello@cosilico.ai"},
+    {name = "The Axiom Foundation", email = "hello@axiom-foundation.org"},
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -52,7 +52,7 @@ psl = [
     "behresp>=0.10",  # Required by taxcalc for behavioral response estimation
 ]
 all = [
-    "cosilico-validators[policyengine,psl]",
+    "rulespec-validators[policyengine,psl]",
 ]
 dev = [
     "pytest>=7.0",
@@ -62,14 +62,14 @@ dev = [
 ]
 
 [project.scripts]
-cosilico-validators = "cosilico_validators.cli:cli"
+rulespec-validators = "rulespec_validators.cli:cli"
 
 [project.urls]
-Homepage = "https://github.com/CosilicoAI/cosilico-validators"
-"Bug Tracker" = "https://github.com/CosilicoAI/cosilico-validators/issues"
+Homepage = "https://github.com/TheAxiomFoundation/rulespec-validators"
+"Bug Tracker" = "https://github.com/TheAxiomFoundation/rulespec-validators/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/cosilico_validators"]
+packages = ["src/rulespec_validators"]
 
 [tool.ruff]
 line-length = 120
@@ -87,7 +87,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/cosilico_validators"]
+source = ["src/rulespec_validators"]
 
 [tool.coverage.report]
 # Realistic threshold for a validation framework with many optional
@@ -102,7 +102,7 @@ exclude_lines = [
 ]
 
 [tool.towncrier]
-package = "cosilico_validators"
+package = "rulespec_validators"
 package_dir = "src"
 directory = "changes"
 filename = "CHANGELOG.md"

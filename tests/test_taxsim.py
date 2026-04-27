@@ -2,8 +2,8 @@
 
 import pytest
 
-from cosilico_validators.validators.base import TestCase, ValidatorType
-from cosilico_validators.validators.taxsim import (
+from rulespec_validators.validators.base import TestCase, ValidatorType
+from rulespec_validators.validators.taxsim import (
     MSTAT_CODES,
     STATE_CODES,
     TAXSIM_COLUMNS,

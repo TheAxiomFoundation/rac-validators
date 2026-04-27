@@ -1,6 +1,6 @@
-"""CPS microdata comparison between Cosilico and external validators.
+"""CPS microdata comparison between RuleSpec and external validators.
 
-Compares weighted totals from Cosilico's CPS calculations against
+Compares weighted totals from RuleSpec's CPS calculations against
 PolicyEngine, TAXSIM, and other validators.
 
 Variable mappings are loaded from variable_mappings.yaml, which references
@@ -22,7 +22,7 @@ import yaml
 def load_variable_mappings() -> dict[str, dict]:
     """Load variable mappings from YAML file.
 
-    The statute field is the source of truth for Cosilico variables.
+    The statute field is the source of truth for RuleSpec variables.
     Format: {title}/{section}/{file}.yaml::{formula_name}
     The formula_name after :: is used as the output column name.
 
@@ -30,7 +30,7 @@ def load_variable_mappings() -> dict[str, dict]:
         Dict mapping variable names to their configurations, including:
         - title: Human-readable name
         - statute: Path to statute definition (e.g., 26/32/eitc.yaml::earned_income_tax_credit)
-        - cosilico_col: Derived from statute (the formula name after ::)
+        - rulespec_col: Derived from statute (the formula name after ::)
         - pe_var: Variable name in PolicyEngine
         - tc_var: Variable name in Tax-Calculator
         - ts_var: Variable name in TAXSIM output
@@ -43,13 +43,13 @@ def load_variable_mappings() -> dict[str, dict]:
     for var_name, config in data.get("variables", {}).items():
         statute = config.get("statute", "")
 
-        # Cosilico column name = variable name from statute (after ::)
-        cosilico_col = statute.split("::")[-1] if "::" in statute else var_name
+        # RuleSpec column name = variable name from statute (after ::)
+        rulespec_col = statute.split("::")[-1] if "::" in statute else var_name
 
         result[var_name] = {
             "title": config.get("title", var_name),
             "statute": statute,
-            "cosilico_col": cosilico_col,
+            "rulespec_col": rulespec_col,
             "pe_var": config.get("policyengine"),
             "pe_entity": config.get("policyengine_entity", "tax_unit"),
             "tc_var": config.get("taxcalc"),
@@ -86,8 +86,8 @@ class ComparisonTotals:
         return self.models.get(model, ModelResult(model, 0.0, 0, 0.0)).total
 
     @property
-    def cosilico_total(self) -> float:
-        return self.get_total("cosilico")
+    def rulespec_total(self) -> float:
+        return self.get_total("rulespec")
 
     @property
     def policyengine_total(self) -> float:
@@ -108,8 +108,8 @@ class ComparisonTotals:
 
     @property
     def difference(self) -> float:
-        """Cosilico - PolicyEngine difference."""
-        return self.cosilico_total - self.policyengine_total
+        """RuleSpec - PolicyEngine difference."""
+        return self.rulespec_total - self.policyengine_total
 
     @property
     def percent_difference(self) -> float:
@@ -127,25 +127,25 @@ class TimedResult:
     elapsed_ms: float
 
 
-def _load_cosilico_data_sources():
-    """Load cosilico-data-sources modules."""
-    data_sources = Path.home() / "CosilicoAI" / "cosilico-data-sources" / "micro" / "us"
+def _load_rulespec_data_sources():
+    """Load rules-us modules."""
+    data_sources = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
     if str(data_sources) not in sys.path:
         sys.path.insert(0, str(data_sources))
 
-    from cosilico_runner import run_all_calculations
+    from rulespec_runner import run_all_calculations
     from tax_unit_builder import load_and_build_tax_units
 
     return load_and_build_tax_units, run_all_calculations
 
 
-def load_cosilico_cps(year: int = 2024) -> TimedResult:
-    """Load Cosilico calculations from CPS microdata.
+def load_rulespec_cps(year: int = 2024) -> TimedResult:
+    """Load RuleSpec calculations from CPS microdata.
 
     Returns:
         TimedResult with dict of arrays and elapsed time in ms.
     """
-    load_and_build_tax_units, run_all_calculations = _load_cosilico_data_sources()
+    load_and_build_tax_units, run_all_calculations = _load_rulespec_data_sources()
 
     start = time.perf_counter()
     df = load_and_build_tax_units(year)
@@ -155,7 +155,7 @@ def load_cosilico_cps(year: int = 2024) -> TimedResult:
     result = {"weight": df["weight"].values}
 
     for var_name, config in COMPARISON_VARIABLES.items():
-        col = config["cosilico_col"]
+        col = config["rulespec_col"]
         if col in df.columns:
             result[var_name] = df[col].values
         else:
@@ -228,12 +228,12 @@ def load_taxsim_values(
     import csv
     import subprocess
 
-    from cosilico_validators.comparison.multi_validator import get_taxsim_executable_path
+    from rulespec_validators.comparison.multi_validator import get_taxsim_executable_path
 
     start = time.perf_counter()
 
-    # Load Cosilico CPS data to get inputs
-    load_and_build_tax_units, _ = _load_cosilico_data_sources()
+    # Load RuleSpec CPS data to get inputs
+    load_and_build_tax_units, _ = _load_rulespec_data_sources()
     df = load_and_build_tax_units(year)
 
     # Get TAXSIM executable
@@ -364,7 +364,7 @@ def compare_cps_totals(
     tolerance: float = 1.0,
     models: Optional[list[str]] = None,
 ) -> dict[str, ComparisonTotals]:
-    """Compare Cosilico CPS totals against multiple models.
+    """Compare RuleSpec CPS totals against multiple models.
 
     Args:
         year: Tax year
@@ -379,13 +379,13 @@ def compare_cps_totals(
         variables = list(COMPARISON_VARIABLES.keys())
 
     if models is None:
-        models = ["cosilico", "policyengine", "taxcalc", "taxsim"]
+        models = ["rulespec", "policyengine", "taxcalc", "taxsim"]
 
     # Load data from each model
     model_results: dict[str, TimedResult] = {}
 
-    if "cosilico" in models:
-        model_results["cosilico"] = load_cosilico_cps(year)
+    if "rulespec" in models:
+        model_results["rulespec"] = load_rulespec_cps(year)
 
     if "policyengine" in models:
         with contextlib.suppress(ImportError):
@@ -438,7 +438,7 @@ def export_to_dashboard(
 ) -> dict:
     """Export comparison results to dashboard JSON format."""
     sections = []
-    total_cos_time = 0.0
+    total_rulespec_time = 0.0
     total_pe_time = 0.0
 
     for var_name, totals in comparison.items():
@@ -446,7 +446,7 @@ def export_to_dashboard(
             {
                 "variable": var_name,
                 "title": totals.title,
-                "cosilico_total": totals.cosilico_total,
+                "rulespec_total": totals.rulespec_total,
                 "policyengine_total": totals.policyengine_total,
                 "difference": totals.difference,
                 "percent_difference": totals.percent_difference,
@@ -455,7 +455,7 @@ def export_to_dashboard(
                 "n_records": totals.n_records,
             }
         )
-        total_cos_time = totals.cosilico_time_ms  # Same for all vars
+        total_rulespec_time = totals.rulespec_time_ms  # Same for all vars
         total_pe_time = totals.policyengine_time_ms  # pragma: no cover – unreachable due to AttributeError above
 
     all_totals = list(comparison.values())
@@ -473,9 +473,9 @@ def export_to_dashboard(
             "variables_compared": len(sections),
         },
         "performance": {
-            "cosilico_ms": total_cos_time,
+            "rulespec_ms": total_rulespec_time,
             "policyengine_ms": total_pe_time,
-            "speedup": total_pe_time / total_cos_time if total_cos_time > 0 else 0,
+            "speedup": total_pe_time / total_rulespec_time if total_rulespec_time > 0 else 0,
         },
     }
 

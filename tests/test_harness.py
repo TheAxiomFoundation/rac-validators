@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from cosilico_validators.harness import (
+from rulespec_validators.harness import (
     AlignmentResult,
     Checkpoint,
     CoverageResult,
@@ -16,7 +16,7 @@ from cosilico_validators.harness import (
     ReviewResult,
     VariableAlignment,
 )
-from cosilico_validators.harness.checkpoint import (
+from rulespec_validators.harness.checkpoint import (
     compare_checkpoints,
     create_empty_checkpoint,
     get_baseline_path,
@@ -26,12 +26,12 @@ from cosilico_validators.harness.checkpoint import (
     save_baseline,
     save_checkpoint,
 )
-from cosilico_validators.harness.runner import (
+from rulespec_validators.harness.runner import (
     VARIABLES,
     ValidationHarness,
     run_harness,
 )
-from cosilico_validators.harness.scorecard import (
+from rulespec_validators.harness.scorecard import (
     format_delta,
     format_percentage,
     generate_compact_scorecard,
@@ -305,7 +305,7 @@ class TestBaselineFunctions:
                 test_coverage=0.8, no_literals_pass=True, all_imports_valid=True, all_dtypes_valid=True
             ),
         )
-        with patch("cosilico_validators.harness.checkpoint.get_baseline_path", return_value=tmp_path / "test.json"):
+        with patch("rulespec_validators.harness.checkpoint.get_baseline_path", return_value=tmp_path / "test.json"):
             path = save_baseline(result, "test")
             assert path.exists()
             loaded = load_baseline("test")
@@ -330,7 +330,7 @@ class TestValidationHarness:
         assert h.run_review is False
 
     def test_run_no_alignment_no_quality(self):
-        with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
+        with patch("rulespec_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(run_alignment=False, run_quality=False)
             result = h.run_full_validation()
             assert result.alignment.overall_rate == 0.0
@@ -343,20 +343,20 @@ class TestValidationHarness:
         section_path.mkdir(parents=True)
         (section_path / "a.yaml").write_text("variable eitc:\n  formula: |\n    0")
 
-        with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
+        with patch("rulespec_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(statute_root=statute_root, run_alignment=False, run_quality=False)
             result = h.run_full_validation()
             assert result.coverage.total == len(VARIABLES)
             assert result.coverage.implemented >= 1
 
     def test_agent_review_no_rulespec_files(self):
-        with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
+        with patch("rulespec_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(run_alignment=False, run_quality=False, run_review=True)
             result = h.run_full_validation(changed_files=[Path("test.py")])
             assert result.review is None
 
     def test_agent_review_with_rulespec_files(self):
-        with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
+        with patch("rulespec_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(run_alignment=False, run_quality=False, run_review=True)
             result = h.run_full_validation(changed_files=[Path("test.yaml")])
             assert result.review is not None
@@ -368,7 +368,7 @@ class TestValidationHarness:
         statute_root.mkdir()
         (statute_root / "test.yaml").write_text("variable x:\n  formula: |\n    0\n")
 
-        with patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"):
+        with patch("rulespec_validators.harness.runner.get_git_commit", return_value="abc"):
             h = ValidationHarness(
                 statute_root=statute_root,
                 run_alignment=False,
@@ -385,8 +385,8 @@ class TestValidationHarness:
             ]
         }
         with (
-            patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"),
-            patch("cosilico_validators.dashboard_export.run_export", return_value=mock_dashboard),
+            patch("rulespec_validators.harness.runner.get_git_commit", return_value="abc"),
+            patch("rulespec_validators.dashboard_export.run_export", return_value=mock_dashboard),
         ):
             h = ValidationHarness(run_alignment=True, run_quality=False)
             result = h.run_full_validation()
@@ -394,8 +394,8 @@ class TestValidationHarness:
 
     def test_alignment_checks_failure(self):
         with (
-            patch("cosilico_validators.harness.runner.get_git_commit", return_value="abc"),
-            patch("cosilico_validators.dashboard_export.run_export", side_effect=Exception("fail")),
+            patch("rulespec_validators.harness.runner.get_git_commit", return_value="abc"),
+            patch("rulespec_validators.dashboard_export.run_export", side_effect=Exception("fail")),
         ):
             h = ValidationHarness(run_alignment=True, run_quality=False)
             result = h.run_full_validation()
@@ -404,13 +404,13 @@ class TestValidationHarness:
 
 class TestRunHarness:
     def test_run_harness_default(self):
-        with patch("cosilico_validators.harness.runner.ValidationHarness") as mock_vh:
+        with patch("rulespec_validators.harness.runner.ValidationHarness") as mock_vh:
             mock_vh.return_value.run_full_validation.return_value = MagicMock()
             result = run_harness()
             assert result is not None
 
     def test_run_harness_only_quality(self):
-        with patch("cosilico_validators.harness.runner.ValidationHarness") as mock_vh:
+        with patch("rulespec_validators.harness.runner.ValidationHarness") as mock_vh:
             mock_vh.return_value.run_full_validation.return_value = MagicMock()
             run_harness(only="quality")
             args = mock_vh.call_args

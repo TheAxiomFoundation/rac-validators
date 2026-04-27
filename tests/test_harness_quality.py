@@ -2,26 +2,26 @@
 
 from pathlib import Path
 
-from cosilico_validators.harness import QualityResult
-from cosilico_validators.harness.quality import run_quality_checks
-from cosilico_validators.harness.quality.coverage import (
+from rulespec_validators.harness import QualityResult
+from rulespec_validators.harness.quality import run_quality_checks
+from rulespec_validators.harness.quality.coverage import (
     FORMULA_PATTERN,
     TEST_CASE_PATTERN,
     TESTS_PATTERN,
     VARIABLE_PATTERN,
     check_test_coverage,
 )
-from cosilico_validators.harness.quality.grounding import (
+from rulespec_validators.harness.quality.grounding import (
     check_grounding,
     extract_numbers_from_text,
     extract_numeric_values,
 )
-from cosilico_validators.harness.quality.imports import (
+from rulespec_validators.harness.quality.imports import (
     IMPORT_PATTERN,
     IMPORTS_START,
     check_imports,
 )
-from cosilico_validators.harness.quality.schema import (
+from rulespec_validators.harness.quality.schema import (
     ALLOWED_INTEGERS,
     DTYPE_PATTERN,
     ENTITY_PATTERN,

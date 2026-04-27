@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cosilico_validators.comparison.record_comparison import (
+from rulespec_validators.comparison.record_comparison import (
     RecordComparison,
     _create_pe_situation,
     _safe_float,
@@ -21,12 +21,12 @@ class TestRecordComparison:
         return RecordComparison(
             variable="eitc",
             n_records=n,
-            cosilico=np.ones(n) * 500,
+            rulespec=np.ones(n) * 500,
             policyengine=np.ones(n) * 510,
             taxsim=np.ones(n) * 505,
             taxcalc=np.zeros(n),
             weights=np.ones(n) * 100,
-            cosilico_ms=50.0,
+            rulespec_ms=50.0,
             policyengine_ms=200.0,
             taxsim_ms=150.0,
             taxcalc_ms=0.0,
@@ -35,13 +35,13 @@ class TestRecordComparison:
     def test_weighted_totals(self):
         comp = self._make_comparison()
         totals = comp.weighted_totals
-        assert totals["cosilico"] == pytest.approx(500 * 100 * 100)
+        assert totals["rulespec"] == pytest.approx(500 * 100 * 100)
         assert totals["policyengine"] == pytest.approx(510 * 100 * 100)
 
     def test_mean_abs_diff_vs_pe(self):
         comp = self._make_comparison()
         diffs = comp.mean_abs_diff_vs_pe
-        assert diffs["cosilico"] == pytest.approx(10.0)
+        assert diffs["rulespec"] == pytest.approx(10.0)
         assert diffs["taxsim"] == pytest.approx(5.0)
         assert diffs["taxcalc"] == pytest.approx(510.0)
 
@@ -182,12 +182,12 @@ class TestPrintComparison:
             "eitc": RecordComparison(
                 variable="eitc",
                 n_records=n,
-                cosilico=np.ones(n) * 500,
+                rulespec=np.ones(n) * 500,
                 policyengine=np.ones(n) * 510,
                 taxsim=np.ones(n) * 505,
                 taxcalc=np.zeros(n),
                 weights=np.ones(n),
-                cosilico_ms=10,
+                rulespec_ms=10,
                 policyengine_ms=20,
                 taxsim_ms=15,
                 taxcalc_ms=0,
@@ -199,7 +199,7 @@ class TestPrintComparison:
 
 class TestLoadCpsInputs:
     def test_load_cps_inputs(self):
-        from cosilico_validators.comparison.record_comparison import load_cps_inputs
+        from rulespec_validators.comparison.record_comparison import load_cps_inputs
 
         mock_builder = MagicMock()
         mock_df = pd.DataFrame({"weight": [100.0], "earned_income": [50000.0]})
@@ -213,9 +213,9 @@ class TestLoadCpsInputs:
                 assert isinstance(result, pd.DataFrame)
 
 
-class TestRunCosilico:
-    def test_run_cosilico(self):
-        from cosilico_validators.comparison.record_comparison import run_cosilico
+class TestRunRuleSpec:
+    def test_run_rulespec(self):
+        from rulespec_validators.comparison.record_comparison import run_rulespec
 
         mock_runner = MagicMock()
         input_df = pd.DataFrame({"weight": [100.0], "earned_income": [50000.0]})
@@ -224,8 +224,8 @@ class TestRunCosilico:
         with patch("pathlib.Path.home", return_value=MagicMock()):
             import sys
 
-            with patch.dict(sys.modules, {"cosilico_runner": mock_runner}):
-                result_df, elapsed_ms = run_cosilico(input_df, year=2024)
+            with patch.dict(sys.modules, {"rulespec_runner": mock_runner}):
+                result_df, elapsed_ms = run_rulespec(input_df, year=2024)
                 assert isinstance(result_df, pd.DataFrame)
                 assert elapsed_ms >= 0
 
@@ -234,7 +234,7 @@ class TestRunPolicyengine:
     def test_run_policyengine(self):
         import sys
 
-        from cosilico_validators.comparison.record_comparison import run_policyengine
+        from rulespec_validators.comparison.record_comparison import run_policyengine
 
         mock_pe = MagicMock()
         mock_sim = MagicMock()
@@ -268,7 +268,7 @@ class TestRunPolicyengine:
 
 class TestRunTaxsim:
     def test_run_taxsim_success(self):
-        from cosilico_validators.comparison.record_comparison import run_taxsim
+        from rulespec_validators.comparison.record_comparison import run_taxsim
 
         input_df = pd.DataFrame(
             {
@@ -291,7 +291,7 @@ class TestRunTaxsim:
 
         with (
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
             patch("subprocess.run", return_value=mock_result),
@@ -302,7 +302,7 @@ class TestRunTaxsim:
             assert "eitc" in result_df.columns
 
     def test_run_taxsim_failure(self):
-        from cosilico_validators.comparison.record_comparison import run_taxsim
+        from rulespec_validators.comparison.record_comparison import run_taxsim
 
         input_df = pd.DataFrame(
             {
@@ -320,7 +320,7 @@ class TestRunTaxsim:
 
         with (
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
             patch("subprocess.run", return_value=mock_result),
@@ -329,7 +329,7 @@ class TestRunTaxsim:
             run_taxsim(input_df, year=2024)
 
     def test_run_taxsim_joint_filer(self):
-        from cosilico_validators.comparison.record_comparison import run_taxsim
+        from rulespec_validators.comparison.record_comparison import run_taxsim
 
         input_df = pd.DataFrame(
             {
@@ -353,7 +353,7 @@ class TestRunTaxsim:
 
         with (
             patch(
-                "cosilico_validators.comparison.multi_validator.get_taxsim_executable_path",
+                "rulespec_validators.comparison.multi_validator.get_taxsim_executable_path",
                 return_value="/tmp/taxsim35",
             ),
             patch("subprocess.run", return_value=mock_result),
@@ -364,7 +364,7 @@ class TestRunTaxsim:
 
 class TestCompareRecords:
     def test_compare_records_full(self):
-        from cosilico_validators.comparison.record_comparison import (
+        from rulespec_validators.comparison.record_comparison import (
             compare_records as cr_compare_records,
         )
 
@@ -387,25 +387,25 @@ class TestCompareRecords:
             }
         )
 
-        cos_result = pd.DataFrame({"eitc": [500.0]})
+        rulespec_result = pd.DataFrame({"eitc": [500.0]})
         pe_result = pd.DataFrame({"eitc": [510.0]})
         ts_result = pd.DataFrame({"eitc": [505.0]})
 
         with (
             patch(
-                "cosilico_validators.comparison.record_comparison.load_cps_inputs",
+                "rulespec_validators.comparison.record_comparison.load_cps_inputs",
                 return_value=mock_df,
             ),
             patch(
-                "cosilico_validators.comparison.record_comparison.run_cosilico",
-                return_value=(cos_result, 50.0),
+                "rulespec_validators.comparison.record_comparison.run_rulespec",
+                return_value=(rulespec_result, 50.0),
             ),
             patch(
-                "cosilico_validators.comparison.record_comparison.run_policyengine",
+                "rulespec_validators.comparison.record_comparison.run_policyengine",
                 return_value=(pe_result, 200.0),
             ),
             patch(
-                "cosilico_validators.comparison.record_comparison.run_taxsim",
+                "rulespec_validators.comparison.record_comparison.run_taxsim",
                 return_value=(ts_result, 150.0),
             ),
         ):
@@ -414,7 +414,7 @@ class TestCompareRecords:
             assert results["eitc"].n_records == 1
 
     def test_compare_records_default_variables(self):
-        from cosilico_validators.comparison.record_comparison import (
+        from rulespec_validators.comparison.record_comparison import (
             compare_records as cr_compare_records,
         )
 
@@ -424,31 +424,31 @@ class TestCompareRecords:
             }
         )
 
-        cos_result = pd.DataFrame(
+        rulespec_result = pd.DataFrame(
             {
                 "eitc": [500.0, 600.0],
                 "non_refundable_ctc": [0.0, 2000.0],
                 "refundable_ctc": [0.0, 0.0],
             }
         )
-        pe_result = cos_result.copy()
-        ts_result = cos_result.copy()
+        pe_result = rulespec_result.copy()
+        ts_result = rulespec_result.copy()
 
         with (
             patch(
-                "cosilico_validators.comparison.record_comparison.load_cps_inputs",
+                "rulespec_validators.comparison.record_comparison.load_cps_inputs",
                 return_value=mock_df,
             ),
             patch(
-                "cosilico_validators.comparison.record_comparison.run_cosilico",
-                return_value=(cos_result, 50.0),
+                "rulespec_validators.comparison.record_comparison.run_rulespec",
+                return_value=(rulespec_result, 50.0),
             ),
             patch(
-                "cosilico_validators.comparison.record_comparison.run_policyengine",
+                "rulespec_validators.comparison.record_comparison.run_policyengine",
                 return_value=(pe_result, 200.0),
             ),
             patch(
-                "cosilico_validators.comparison.record_comparison.run_taxsim",
+                "rulespec_validators.comparison.record_comparison.run_taxsim",
                 return_value=(ts_result, 150.0),
             ),
         ):
