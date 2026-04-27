@@ -9,8 +9,8 @@ from rulespec_validators.comparison.core import (
     align_records,
     compare_records,
     generate_dashboard_json,
-    load_rulespec_values,
     load_pe_values,
+    load_rulespec_values,
     run_full_comparison,
     run_variable_comparison,
 )

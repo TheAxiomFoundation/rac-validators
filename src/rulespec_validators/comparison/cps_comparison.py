@@ -7,8 +7,8 @@ to measure agreement.
 
 import numpy as np
 import pandas as pd
-from rulespec_runner import run_all_calculations
 from policyengine_us import Microsimulation
+from rulespec_runner import run_all_calculations
 from tax_unit_builder import load_and_build_tax_units
 
 
