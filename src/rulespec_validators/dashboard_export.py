@@ -106,10 +106,10 @@ def load_rulespec_engine():
     class VectorizedExecutor:
         def __init__(
             self,
-            parameters: dict[str, Any] | None = None,
+            rule_bindings: dict[str, Any] | None = None,
             dependency_resolver: DependencyResolver | None = None,
         ):
-            self.parameters = parameters or {}
+            self.rule_bindings = rule_bindings or {}
             self.dependency_resolver = dependency_resolver
 
         def execute(
@@ -121,7 +121,7 @@ def load_rulespec_engine():
         ) -> dict[str, np.ndarray]:
             parsed = parse_rulespec(code)
             lowered = parsed.to_lowered_program(
-                parameter_overrides=self.parameters,
+                rule_bindings=self.rule_bindings,
                 outputs=output_variables,
             )
             return self._run_lowered(lowered, inputs)
@@ -137,7 +137,7 @@ def load_rulespec_engine():
                 raise ValueError("execute_lazy requires a dependency resolver")
             program = load_rulespec_program(self.dependency_resolver.resolve(entry_point))
             lowered = program.to_lowered_program(
-                parameter_overrides=self.parameters,
+                rule_bindings=self.rule_bindings,
                 outputs=output_variables,
             )
             return self._run_lowered(lowered, inputs)
@@ -358,7 +358,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         }
 
                         # Execute through engine
-                        executor = VectorizedExecutor(parameters=EITC_PARAMS_2024)
+                        executor = VectorizedExecutor(rule_bindings=EITC_PARAMS_2024)
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["eitc_standalone"]
                         )
@@ -387,7 +387,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         }
 
                         # Execute through engine using standalone version (no imports)
-                        executor = VectorizedExecutor(parameters=NIIT_PARAMS_2024)
+                        executor = VectorizedExecutor(rule_bindings=NIIT_PARAMS_2024)
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["niit_standalone"]
                         )
@@ -473,7 +473,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     }
 
                     # Execute with lazy dependency resolution (like OpenFisca)
-                    executor = VectorizedExecutor(parameters=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
+                    executor = VectorizedExecutor(rule_bindings=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
                     results_dict = executor.execute_lazy(
                         entry_point="statute/26/24/a", inputs=inputs, output_variables=["ctc_total"]
                     )
@@ -502,7 +502,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     }
 
                     # Execute with lazy dependency resolution
-                    executor = VectorizedExecutor(parameters=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
+                    executor = VectorizedExecutor(rule_bindings=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
                     results_dict = executor.execute_lazy(
                         entry_point="statute/26/24/a", inputs=inputs, output_variables=["child_tax_credit"]
                     )
@@ -536,7 +536,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     }
 
                     # Execute with lazy dependency resolution - will auto-compute child_tax_credit_before_limit
-                    executor = VectorizedExecutor(parameters=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
+                    executor = VectorizedExecutor(rule_bindings=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
                     results_dict = executor.execute_lazy(
                         entry_point="statute/26/24/d/1/B",
                         inputs=inputs,
@@ -575,7 +575,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         }
 
                         # Execute through engine using standalone formula
-                        executor = VectorizedExecutor(parameters=CDCC_PARAMS_2024)
+                        executor = VectorizedExecutor(rule_bindings=CDCC_PARAMS_2024)
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["cdcc_standalone"]
                         )
@@ -614,7 +614,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                         }
 
                         # Execute through engine using standalone formula
-                        executor = VectorizedExecutor(parameters=STD_DEDUCTION_PARAMS_2024)
+                        executor = VectorizedExecutor(rule_bindings=STD_DEDUCTION_PARAMS_2024)
                         results_dict = executor.execute(
                             code=rulespec_code, inputs=inputs, output_variables=["standard_deduction_standalone"]
                         )

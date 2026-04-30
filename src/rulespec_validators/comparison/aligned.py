@@ -44,8 +44,6 @@ class CommonDataset:
     taxable_unemployment: np.ndarray  # Taxable unemployment compensation
     retirement_distributions: np.ndarray  # Taxable retirement distributions
     miscellaneous_income: np.ndarray  # Other taxable income (prizes, gambling, etc.)
-    other_income: np.ndarray  # Legacy field for backwards compatibility
-
     # Investment income (for EITC disqualification)
     investment_income: np.ndarray
 
@@ -192,7 +190,6 @@ def load_common_dataset(year: int = 2024) -> CommonDataset:
         miscellaneous_income=aggregate_to_tax_unit(calc("miscellaneous_income"))
         if _var_exists(sim, "miscellaneous_income", year)
         else np.zeros_like(tax_unit_id, dtype=float),
-        other_income=np.zeros_like(tax_unit_id, dtype=float),
         investment_income=calc("net_investment_income"),
         # PE computed values (used as inputs for some RuleSpec formulas)
         adjusted_gross_income=calc("adjusted_gross_income"),

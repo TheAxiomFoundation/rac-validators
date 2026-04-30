@@ -34,7 +34,6 @@ def _make_common_dataset(n=100):
         taxable_unemployment=np.zeros(n),
         retirement_distributions=np.zeros(n),
         miscellaneous_income=np.zeros(n),
-        other_income=np.zeros(n),
         investment_income=np.zeros(n),
         adjusted_gross_income=np.ones(n) * 50000,
         taxable_income=np.ones(n) * 35000,

@@ -102,7 +102,7 @@ class ComparisonTotals:
         """Max records across models."""
         return max((m.n_records for m in self.models.values()), default=0)
 
-    # Legacy properties for backward compatibility
+    # Aggregate comparison metrics.
     match_rate: float = 0.0
     mean_absolute_error: float = 0.0
 
