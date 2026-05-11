@@ -15,7 +15,7 @@ Usage:
 #   THIS FILE IS A VALIDATOR ONLY - NO TAX RULES ALLOWED HERE!                 #
 #                                                                              #
 #   ALL TAX CALCULATION LOGIC MUST COME FROM:                                  #
-#     - rules-us/*.yaml files (statute encodings)                            #
+#     - rulespec-us/*.yaml files (statute encodings)                            #
 #     - rulespec-compile (DSL executor)                                         #
 #                                                                              #
 #   This validator ONLY:                                                       #
@@ -237,7 +237,7 @@ STD_DEDUCTION_PARAMS_2024 = {
 
 
 def load_rulespec_file(section: str) -> Optional[str]:
-    """Load .yaml file for a given section from rules-us.
+    """Load .yaml file for a given section from rulespec-us.
 
     Args:
         section: USC section like "26/32" or "26/63"
@@ -245,9 +245,9 @@ def load_rulespec_file(section: str) -> Optional[str]:
     Returns:
         Contents of the .yaml file, or None if not found
     """
-    statute_dir = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute"
+    statute_dir = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "statutes"
 
-    # Try direct path first (e.g., statute/26/32.yaml)
+    # Try direct path first (e.g., statutes/26/32.yaml)
     rulespec_path = statute_dir / f"{section}.yaml"
     if rulespec_path.exists():
         return rulespec_path.read_text()
@@ -314,8 +314,8 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
         VectorizedExecutor, Parser, DependencyResolver = load_rulespec_engine()
         engine_available = True
 
-        # Create dependency resolver pointing to rules-us
-        statute_root = Path.home() / "TheAxiomFoundation" / "rules-us"
+        # Create dependency resolver pointing to rulespec-us
+        statute_root = Path.home() / "TheAxiomFoundation" / "rulespec-us"
         dep_resolver = DependencyResolver(statute_root=statute_root)
     except ImportError as e:
         print(f"  Warning: Could not load engine: {e}")
@@ -343,8 +343,8 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             # Special handling for EITC - we have working engine integration
             if var_name == "eitc" and engine_available:
                 try:
-                    # Load EITC formula from rules-us/statute/26/32.yaml
-                    eitc_rulespec = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "32.yaml"
+                    # Load EITC formula from rulespec-us/statutes/26/32.yaml
+                    eitc_rulespec = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "statutes" / "26" / "32.yaml"
                     if eitc_rulespec.exists():
                         rulespec_code = eitc_rulespec.read_text()
 
@@ -372,7 +372,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             if var_name == "net_investment_income_tax" and engine_available:
                 try:
                     # Load NIIT formula from standalone validation file (no imports)
-                    niit_rulespec = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "1411.yaml"
+                    niit_rulespec = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "statutes" / "26" / "1411.yaml"
                     if niit_rulespec.exists():
                         rulespec_code = niit_rulespec.read_text()
 
@@ -442,7 +442,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     # Execute through engine with lazy dependency resolution
                     executor = VectorizedExecutor(dependency_resolver=dep_resolver)
                     results_dict = executor.execute_lazy(
-                        entry_point="statute/26/62/a", inputs=inputs, output_variables=["adjusted_gross_income"]
+                        entry_point="statutes/26/62/a", inputs=inputs, output_variables=["adjusted_gross_income"]
                     )
                     rulespec_values = results_dict["adjusted_gross_income"]
                     implemented = True
@@ -475,7 +475,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     # Execute with lazy dependency resolution (like OpenFisca)
                     executor = VectorizedExecutor(rule_bindings=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
                     results_dict = executor.execute_lazy(
-                        entry_point="statute/26/24/a", inputs=inputs, output_variables=["ctc_total"]
+                        entry_point="statutes/26/24/a", inputs=inputs, output_variables=["ctc_total"]
                     )
                     rulespec_values = results_dict["ctc_total"]
                     implemented = True
@@ -504,7 +504,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     # Execute with lazy dependency resolution
                     executor = VectorizedExecutor(rule_bindings=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
                     results_dict = executor.execute_lazy(
-                        entry_point="statute/26/24/a", inputs=inputs, output_variables=["child_tax_credit"]
+                        entry_point="statutes/26/24/a", inputs=inputs, output_variables=["child_tax_credit"]
                     )
                     rulespec_values = results_dict["child_tax_credit"]
                     implemented = True
@@ -538,7 +538,7 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
                     # Execute with lazy dependency resolution - will auto-compute child_tax_credit_before_limit
                     executor = VectorizedExecutor(rule_bindings=CTC_PARAMS_2024, dependency_resolver=dep_resolver)
                     results_dict = executor.execute_lazy(
-                        entry_point="statute/26/24/d/1/B",
+                        entry_point="statutes/26/24/d/1/B",
                         inputs=inputs,
                         output_variables=["additional_child_tax_credit"],
                     )
@@ -553,8 +553,8 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             # cdcc = applicable_percentage * min(expenses, expense_limit, earned_income_limit)
             elif var_name == "cdcc" and engine_available:
                 try:
-                    # Load CDCC formula from rules-us/statute/26/21/a.yaml
-                    cdcc_rulespec = Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "21" / "a.yaml"
+                    # Load CDCC formula from rulespec-us/statutes/26/21/a.yaml
+                    cdcc_rulespec = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "statutes" / "26" / "21" / "a.yaml"
                     if cdcc_rulespec.exists():
                         rulespec_code = cdcc_rulespec.read_text()
 
@@ -590,9 +590,9 @@ def run_export(year: int = 2024, output_path: Optional[Path] = None) -> dict:
             # Depends on: filing_status, age, blind status, dependent status
             elif var_name == "standard_deduction" and engine_available:
                 try:
-                    # Load Standard Deduction formula from rules-us/statute/26/63/c.yaml
+                    # Load Standard Deduction formula from rulespec-us/statutes/26/63/c.yaml
                     std_ded_rulespec = (
-                        Path.home() / "TheAxiomFoundation" / "rules-us" / "statute" / "26" / "63" / "c.yaml"
+                        Path.home() / "TheAxiomFoundation" / "rulespec-us" / "statutes" / "26" / "63" / "c.yaml"
                     )
                     if std_ded_rulespec.exists():
                         rulespec_code = std_ded_rulespec.read_text()

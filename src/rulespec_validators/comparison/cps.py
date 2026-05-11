@@ -4,7 +4,7 @@ Compares weighted totals from RuleSpec's CPS calculations against
 PolicyEngine, TAXSIM, and other validators.
 
 Variable mappings are loaded from variable_mappings.yaml, which references
-statute definitions in rules-us (e.g., 26/32/eitc.yaml::earned_income_tax_credit).
+statute definitions in rulespec-us (e.g., 26/32/eitc.yaml::earned_income_tax_credit).
 """
 
 import contextlib
@@ -128,8 +128,8 @@ class TimedResult:
 
 
 def _load_rulespec_data_sources():
-    """Load rules-us modules."""
-    data_sources = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+    """Load rulespec-us modules."""
+    data_sources = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
     if str(data_sources) not in sys.path:
         sys.path.insert(0, str(data_sources))
 

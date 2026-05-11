@@ -336,7 +336,7 @@ class TestValidationHarness:
             assert result.alignment.overall_rate == 0.0
 
     def test_coverage_checks(self, tmp_path):
-        statute_root = tmp_path / "statute"
+        statute_root = tmp_path / "statutes"
         statute_root.mkdir()
         # Create a .yaml file for one section
         section_path = statute_root / "26" / "32"
@@ -364,7 +364,7 @@ class TestValidationHarness:
 
     def test_run_with_quality_enabled(self, tmp_path):
         """Test run_full_validation with run_quality=True to cover line 96."""
-        statute_root = tmp_path / "statute"
+        statute_root = tmp_path / "statutes"
         statute_root.mkdir()
         (statute_root / "test.yaml").write_text("variable x:\n  formula: |\n    0\n")
 

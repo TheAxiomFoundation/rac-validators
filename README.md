@@ -6,13 +6,13 @@ External validation framework for RuleSpec DSL encodings.
 
 **This tool is for external validation, not testing.**
 
-| Aspect | Tests (in rules-us) | Validation (this repo) |
+| Aspect | Tests (in rulespec-us) | Validation (this repo) |
 |--------|------------------------|------------------------|
 | Purpose | Verify encoding matches statute | Compare against external tools |
 | Authority | Authoritative—our truth | Informational—tools may have bugs |
 | Approach | TDD—test-first development | Audit—report consistency |
 | Output | Pass/Fail | Comparison report with disagreements |
-| Location | `rules-us/26/32/tests/` | `rulespec-validators` |
+| Location | `rulespec-us/26/32/tests/` | `rulespec-validators` |
 
 Example validation output:
 ```

@@ -110,7 +110,7 @@ class TestCPSComparison:
         from rulespec_validators.comparison import load_rulespec_values
 
         # Create data sources directory
-        data_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+        data_dir = tmp_path / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
         data_dir.mkdir(parents=True)
 
         mock_df = pd.DataFrame(

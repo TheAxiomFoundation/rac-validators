@@ -317,7 +317,7 @@ def run_aligned_comparison(year: int = 2024) -> dict:
     print(f"  {dataset.n_records:,} tax units loaded")
 
     # Load RuleSpec implementations
-    data_sources_path = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+    data_sources_path = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
     sys.path.insert(0, str(data_sources_path))
     import pandas as pd
     from rulespec_runner import PARAMS_2024, calculate_eitc, calculate_income_tax

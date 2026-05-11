@@ -22,8 +22,8 @@ from .checkpoint import get_git_commit
 from .quality import run_quality_checks
 
 # Default paths
-RULES_US_ROOT = Path.home() / "TheAxiomFoundation" / "rules-us"
-STATUTE_ROOT = RULES_US_ROOT / "statute"
+RULESPEC_US_ROOT = Path.home() / "TheAxiomFoundation" / "rulespec-us"
+STATUTE_ROOT = RULESPEC_US_ROOT / "statutes"
 
 # Variable definitions with their sections
 VARIABLES = {

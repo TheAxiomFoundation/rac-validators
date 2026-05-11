@@ -107,7 +107,7 @@ class TestLoadPeValues:
 class TestLoadRuleSpecValues:
     def test_load_values(self, tmp_path):
         # Create the directory so exists() returns True
-        data_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+        data_dir = tmp_path / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
         data_dir.mkdir(parents=True)
 
         import pandas as pd
@@ -142,13 +142,13 @@ class TestLoadRuleSpecValues:
     def test_missing_data_sources(self, tmp_path):
         with (
             patch("pathlib.Path.home", return_value=tmp_path),
-            pytest.raises(ImportError, match="rules-us not found"),
+            pytest.raises(ImportError, match="rulespec-us not found"),
         ):
             load_rulespec_values("eitc")
 
     def test_load_values_with_ids(self, tmp_path):
         """Test return_ids=True path."""
-        data_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+        data_dir = tmp_path / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
         data_dir.mkdir(parents=True)
 
         import pandas as pd
@@ -184,7 +184,7 @@ class TestLoadRuleSpecValues:
 
     def test_load_variable_not_found(self, tmp_path):
         """Test ValueError when variable column is not in dataframe."""
-        data_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+        data_dir = tmp_path / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
         data_dir.mkdir(parents=True)
 
         import pandas as pd

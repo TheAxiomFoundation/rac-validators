@@ -107,7 +107,7 @@ def load_pe_values(variable: str, year: int = 2024, return_ids: bool = False):
 def load_rulespec_values(variable: str, year: int = 2024, return_ids: bool = False):
     """Load RuleSpec-computed values for a variable across CPS.
 
-    Uses the rules-us runner infrastructure to compute values
+    Uses the rulespec-us runner infrastructure to compute values
     using the same tax unit construction as PolicyEngine comparison.
 
     Args:
@@ -119,17 +119,17 @@ def load_rulespec_values(variable: str, year: int = 2024, return_ids: bool = Fal
         Array of values for each tax unit, or (values, ids) tuple
 
     Raises:
-        ImportError: If rules-us not available
+        ImportError: If rulespec-us not available
     """
     import sys
     from pathlib import Path
 
-    # Add rules-us to path
-    data_sources_path = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+    # Add rulespec-us to path
+    data_sources_path = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
     if not data_sources_path.exists():
         raise ImportError(
-            f"rules-us not found at {data_sources_path}. "
-            "Clone the repo to ~/TheAxiomFoundation/rules-us"
+            f"rulespec-us not found at {data_sources_path}. "
+            "Clone the repo to ~/TheAxiomFoundation/rulespec-us"
         )
     sys.path.insert(0, str(data_sources_path))
 

@@ -240,16 +240,16 @@ class TestCheckImports:
         assert len(issues) == 0
         assert all_valid is True
 
-    def test_statute_prefix_stripped(self, tmp_path):
-        """When file is under statute/ dir, the 'statute/' prefix is stripped."""
-        statute_dir = tmp_path / "statute"
+    def test_statutes_prefix_stripped(self, tmp_path):
+        """When file is under statutes/ dir, the 'statutes/' prefix is stripped."""
+        statute_dir = tmp_path / "statutes"
         statute_dir.mkdir()
         rulespec_file = statute_dir / "26" / "32" / "a.yaml"
         rulespec_file.parent.mkdir(parents=True)
         rulespec_file.write_text("variable eitc:\n  formula: |\n    0\n")
 
-        # statute_root = tmp_path, so rel_path = "statute/26/32/a.yaml"
-        # path_key should be "26/32/a" after stripping "statute/" prefix
+        # statute_root = tmp_path, so rel_path = "statutes/26/32/a.yaml"
+        # path_key should be "26/32/a" after stripping "statutes/" prefix
         issues, all_valid = check_imports([rulespec_file], tmp_path)
         assert all_valid is True
 
@@ -300,10 +300,10 @@ class TestCheckImports:
             issues, all_valid = check_imports([rulespec_file], tmp_path)
             assert isinstance(issues, list)
 
-    def test_import_found_via_statute_prefix(self, tmp_path):
-        """Import resolved via statute/ subdirectory."""
-        # Create the file at statute/26/32/a.yaml
-        statute_dir = tmp_path / "statute" / "26" / "32"
+    def test_import_found_via_statutes_prefix(self, tmp_path):
+        """Import resolved via statutes/ subdirectory."""
+        # Create the file at statutes/26/32/a.yaml
+        statute_dir = tmp_path / "statutes" / "26" / "32"
         statute_dir.mkdir(parents=True)
         target = statute_dir / "a.yaml"
         target.write_text("variable eitc:\n  formula: |\n    0\n")
@@ -313,7 +313,7 @@ class TestCheckImports:
         importer.write_text("imports:\n  - 26/32/a#eitc\n")
 
         issues, all_valid = check_imports([target, importer], tmp_path)
-        # The import should be found via statute/ prefix search
+        # The import should be found via statutes/ prefix search
         assert isinstance(issues, list)
 
     def test_file_outside_statute_root(self, tmp_path):

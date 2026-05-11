@@ -38,7 +38,7 @@ All of these must be TRUE for completion:
 4. **Fix the issue**:
    - If data mapping issue: fix `record_comparison.py`
    - If RuleSpec formula issue: fix `rulespec_runner.py`
-   - If missing statute: create `.yaml` file in `rules-us`
+   - If missing statute: create `.yaml` file in `rulespec-us`
 
 5. **Validate fix**: Re-run comparison, confirm improvement
 
@@ -46,9 +46,9 @@ All of these must be TRUE for completion:
 
 ## Key Files
 
-- `/Users/maxghenis/TheAxiomFoundation/rules-us/micro/us/rulespec_runner.py` - RuleSpec calculations
+- `/Users/maxghenis/TheAxiomFoundation/rulespec-us/micro/us/rulespec_runner.py` - RuleSpec calculations
 - `/Users/maxghenis/TheAxiomFoundation/rulespec-validators/src/rulespec_validators/comparison/record_comparison.py` - Comparison infrastructure
-- `/Users/maxghenis/TheAxiomFoundation/rules-us/statute/26/` - Statute encodings
+- `/Users/maxghenis/TheAxiomFoundation/rulespec-us/statutes/26/` - Statute encodings
 
 ## Architecture Rules
 

@@ -68,7 +68,7 @@ class RecordComparison:
 
 def load_cps_inputs(year: int = 2024) -> pd.DataFrame:
     """Load our CPS tax units - the common input for all models."""
-    data_sources = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+    data_sources = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
     if str(data_sources) not in sys.path:
         sys.path.insert(0, str(data_sources))
 
@@ -79,7 +79,7 @@ def load_cps_inputs(year: int = 2024) -> pd.DataFrame:
 
 def run_rulespec(df: pd.DataFrame, year: int = 2024) -> tuple[pd.DataFrame, float]:
     """Run RuleSpec on CPS data. Returns (results_df, elapsed_ms)."""
-    data_sources = Path.home() / "TheAxiomFoundation" / "rules-us" / "micro" / "us"
+    data_sources = Path.home() / "TheAxiomFoundation" / "rulespec-us" / "micro" / "us"
     if str(data_sources) not in sys.path:
         sys.path.insert(0, str(data_sources))
 

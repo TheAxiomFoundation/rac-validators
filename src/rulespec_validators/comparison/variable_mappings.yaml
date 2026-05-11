@@ -1,6 +1,6 @@
 # Variable mappings across tax calculation systems
 #
-# The `statute` field references rules-us statute definitions.
+# The `statute` field references rulespec-us statute definitions.
 # Format: {title}/{section}.yaml::{variable_name}
 #
 # The variable name after :: is the output column name in RuleSpec.

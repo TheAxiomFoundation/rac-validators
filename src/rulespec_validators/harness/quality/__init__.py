@@ -19,7 +19,7 @@ def run_quality_checks(
     """Run all quality checks on .yaml files.
 
     Args:
-        statute_root: Root directory of statute files (e.g., rules-us/statute)
+        statute_root: Root directory of statute files (e.g., rulespec-us/statutes)
         changed_files: If provided, only check these files. Otherwise check all.
 
     Returns:

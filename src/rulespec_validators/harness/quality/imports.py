@@ -50,11 +50,11 @@ def check_imports(rulespec_files: list[Path], statute_root: Path) -> tuple[list[
             # Get relative path from statute root
             try:
                 rel_path = rulespec_file.relative_to(statute_root)
-                # Convert to import format: statute/26/32/a.yaml -> 26/32/a
+                # Convert to import format: statutes/26/32/a.yaml -> 26/32/a
                 path_key = str(rel_path.with_suffix("")).replace("\\", "/")
-                # Also handle if statute_root already includes 'statute'
-                if path_key.startswith("statute/"):
-                    path_key = path_key[8:]
+                # Also handle if statute_root already includes 'statutes'
+                if path_key.startswith("statutes/"):
+                    path_key = path_key[9:]
             except ValueError:
                 # File not under statute_root, use filename
                 path_key = rulespec_file.stem
@@ -104,8 +104,8 @@ def check_imports(rulespec_files: list[Path], statute_root: Path) -> tuple[list[
                         if check_path.exists():
                             found_file = True
                             break
-                        # Also try with statute/ prefix
-                        check_path = statute_root / "statute" / f"{import_path}{suffix}"
+                        # Also try with statutes/ prefix
+                        check_path = statute_root / "statutes" / f"{import_path}{suffix}"
                         if check_path.exists():
                             found_file = True
                             break

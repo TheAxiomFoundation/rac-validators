@@ -46,7 +46,7 @@ class TestLoadRuleSpecFile:
 
     def test_load_direct_path(self, tmp_path):
         # Create a fake statute directory structure
-        statute_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "statute"
+        statute_dir = tmp_path / "TheAxiomFoundation" / "rulespec-us" / "statutes"
         rulespec_dir = statute_dir / "26"
         rulespec_dir.mkdir(parents=True)
         (rulespec_dir / "32.yaml").write_text("test content")
@@ -56,7 +56,7 @@ class TestLoadRuleSpecFile:
             assert result == "test content"
 
     def test_load_subdirectory_path(self, tmp_path):
-        statute_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "statute"
+        statute_dir = tmp_path / "TheAxiomFoundation" / "rulespec-us" / "statutes"
         rulespec_dir = statute_dir / "26" / "63"
         rulespec_dir.mkdir(parents=True)
         (rulespec_dir / "a.yaml").write_text("sub content")
@@ -66,7 +66,7 @@ class TestLoadRuleSpecFile:
             assert result == "sub content"
 
     def test_load_not_found(self, tmp_path):
-        statute_dir = tmp_path / "TheAxiomFoundation" / "rules-us" / "statute"
+        statute_dir = tmp_path / "TheAxiomFoundation" / "rulespec-us" / "statutes"
         statute_dir.mkdir(parents=True)
 
         with patch("rulespec_validators.dashboard_export.Path.home", return_value=tmp_path):
@@ -176,7 +176,7 @@ class TestLoadRuleSpecEngine:
             mock_home.return_value = Path("/nonexistent")
             ve, parser, dr = load_rulespec_engine()
             assert parser is mock_parser
-            assert dr(statute_root=Path("/rules-us")).resolve("statute/26/32") == Path("/rules-us/statute/26/32.yaml")
+            assert dr(statute_root=Path("/rulespec-us")).resolve("statutes/26/32") == Path("/rulespec-us/statutes/26/32.yaml")
             assert ve.__name__ == "VectorizedExecutor"
 
 
@@ -510,7 +510,7 @@ class TestRunExportEngineBranches:
             patch("rulespec_validators.dashboard_export.load_rulespec_file", return_value="mock rulespec"),
             patch("rulespec_validators.dashboard_export.Path") as mock_path_cls,
         ):
-            # Make Path.home() / ... / "statute" / "26" / "32.yaml" all return mock_rulespec_path
+            # Make Path.home() / ... / "statutes" / "26" / "32.yaml" all return mock_rulespec_path
             mock_path_cls.home.return_value.__truediv__ = MagicMock(return_value=mock_rulespec_path)
             mock_path_cls.__truediv__ = MagicMock(return_value=mock_rulespec_path)
             mock_rulespec_path.__truediv__ = MagicMock(return_value=mock_rulespec_path)
@@ -553,7 +553,7 @@ class TestRunExportEngineBranches:
         ):
             ve, parser, dr = load_rulespec_engine()
             assert parser is mock_parser
-            assert dr(statute_root=tmp_path).resolve("statute/26/32") == tmp_path / "statute/26/32.yaml"
+            assert dr(statute_root=tmp_path).resolve("statutes/26/32") == tmp_path / "statutes/26/32.yaml"
             assert ve.__name__ == "VectorizedExecutor"
 
 
